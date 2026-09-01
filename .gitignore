@@ -1,0 +1,37 @@
+# Gradle
+.gradle/
+**/build/
+gradle-app.setting
+!gradle/wrapper/gradle-wrapper.jar
+
+# Android
+*.apk
+*.aab
+*.ap_
+*.dex
+local.properties
+.cxx/
+captures/
+*.jks
+*.keystore
+
+# Kotlin
+*.class
+
+# IDE
+.idea/
+*.iml
+.vscode/
+*.iws
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Env / secrets
+.env
+.env.*
+!.env.example
+
+# Logs
+*.log

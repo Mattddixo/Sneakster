@@ -1,0 +1,16 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <!-- A loose coil suggesting the snake's path, plus a glowing power-up dot at the head. -->
+    <path
+        android:strokeColor="#39FF88"
+        android:strokeWidth="9"
+        android:strokeLineCap="round"
+        android:fillColor="#00000000"
+        android:pathData="M30,74 C30,55 44,55 44,44 C44,33 58,33 58,44 C58,53 70,53 74,44" />
+    <path
+        android:fillColor="#7CFFB2"
+        android:pathData="M74,44 m-8,0 a8,8 0 1,0 16,0 a8,8 0 1,0 -16,0" />
+</vector>
