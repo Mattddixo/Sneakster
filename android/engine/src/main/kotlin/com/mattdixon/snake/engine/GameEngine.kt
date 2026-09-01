@@ -29,7 +29,7 @@ class GameEngine(
 
     private var head = Vec2(config.arenaWidth / 2f, config.arenaHeight / 2f)
     private var heading = -PI.toFloat() / 2f
-    private var speed = config.difficulty.baseSpeed
+    private var speed = config.difficulty.baseSpeed * config.scale
     private val path = ArrayDeque<Vec2>().apply { addFirst(head) }
     private var bodyLength = config.minBodyLength
 
@@ -90,7 +90,7 @@ class GameEngine(
         var multiplier = 1f
         if (isEffectActive(PowerUpType.SPEED_UP)) multiplier *= 1.5f
         if (isEffectActive(PowerUpType.SLOW_DOWN)) multiplier *= 0.55f
-        return config.difficulty.baseSpeedAt(elapsedSeconds) * multiplier
+        return config.difficulty.baseSpeedAt(elapsedSeconds) * config.scale * multiplier
     }
 
     private fun isEffectActive(type: PowerUpType): Boolean {
@@ -130,7 +130,7 @@ class GameEngine(
 
     private fun updateBody() {
         path.addFirst(head)
-        bodyLength = (config.minBodyLength + (speed - config.difficulty.baseSpeed) * config.bodyLengthPerSpeedUnit)
+        bodyLength = (config.minBodyLength + (speed - config.difficulty.baseSpeed * config.scale) * config.bodyLengthPerSpeedUnit)
             .coerceIn(config.minBodyLength, config.maxBodyLength)
 
         var accumulated = 0f

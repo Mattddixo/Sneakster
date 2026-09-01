@@ -30,7 +30,7 @@ class GameViewModel(
     /** Call once the canvas is measured (and again on rotation/resize) to (re)start a round. */
     fun startNewRound(arenaWidth: Float, arenaHeight: Float, settings: GameSettings) {
         lastSettings = settings
-        val config = GameConfig(
+        val config = GameConfig.forArena(
             arenaWidth = arenaWidth,
             arenaHeight = arenaHeight,
             difficulty = settings.difficulty,
@@ -41,6 +41,7 @@ class GameViewModel(
         _uiState.value = GameUiState(
             arenaWidth = arenaWidth,
             arenaHeight = arenaHeight,
+            headRadius = config.headRadius,
             gameState = newEngine.currentState(),
             isPaused = false,
         )

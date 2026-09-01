@@ -12,6 +12,11 @@ enum class PowerUpType(val scoreBonus: Int, val effectDurationSeconds: Float) {
 
     /** Risk/reward: drops fresh obstacles elsewhere on the field in exchange for bonus points. */
     SPAWN_OBSTACLE(scoreBonus = 30, effectDurationSeconds = 0f),
+
+    /** Purely visual: the UI spins the arena from square to diamond and back. Doesn't touch
+     * physics or collision at all — the engine just tracks that it's active, like any other
+     * timed effect, so the UI layer can read it from [GameState.activeEffects]. */
+    DIAMOND_ROTATE(scoreBonus = 20, effectDurationSeconds = 6f),
 }
 
 data class PowerUp(

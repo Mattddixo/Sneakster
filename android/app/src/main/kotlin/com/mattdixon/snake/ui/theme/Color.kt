@@ -13,6 +13,7 @@ val PowerUpSpeedUp = Color(0xFFFFD84C)
 val PowerUpSlowDown = Color(0xFF4CC2FF)
 val PowerUpSlowMotion = Color(0xFFB98CFF)
 val PowerUpSpawnObstacle = Color(0xFFFF6FB0)
+val PowerUpDiamondRotate = Color(0xFF5CE1E6)
 
 val AccentPrimary = Color(0xFF39FF88)
 val SurfaceDark = Color(0xFF0F1A16)

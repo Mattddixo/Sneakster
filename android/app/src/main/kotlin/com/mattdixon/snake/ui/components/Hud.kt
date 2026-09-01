@@ -17,6 +17,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.mattdixon.snake.engine.PowerUpType
+import com.mattdixon.snake.ui.theme.PowerUpDiamondRotate
 import com.mattdixon.snake.ui.theme.PowerUpSlowDown
 import com.mattdixon.snake.ui.theme.PowerUpSlowMotion
 import com.mattdixon.snake.ui.theme.PowerUpSpeedUp
@@ -27,6 +28,13 @@ import kotlin.math.roundToInt
 @Composable
 fun GameHud(score: Int, speed: Float, activeEffects: Map<PowerUpType, Float>, elapsedSeconds: Float, modifier: Modifier = Modifier) {
     Column(modifier = modifier, horizontalAlignment = Alignment.CenterHorizontally) {
+        Text(
+            text = "TIME",
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            fontWeight = FontWeight.Medium,
+            fontSize = 12.sp,
+            letterSpacing = 1.5.sp,
+        )
         Text(
             text = elapsedSeconds.formatSeconds(),
             color = MaterialTheme.colorScheme.onBackground,
@@ -59,7 +67,8 @@ private fun RowScope.EffectBadge(type: PowerUpType) {
     val (label, color) = when (type) {
         PowerUpType.SPEED_UP -> "FAST" to PowerUpSpeedUp
         PowerUpType.SLOW_DOWN -> "SLOW" to PowerUpSlowDown
-        PowerUpType.SLOW_MOTION -> "TIME" to PowerUpSlowMotion
+        PowerUpType.SLOW_MOTION -> "SLOMO" to PowerUpSlowMotion
+        PowerUpType.DIAMOND_ROTATE -> "SPIN" to PowerUpDiamondRotate
         PowerUpType.SPAWN_OBSTACLE -> return
     }
     Text(

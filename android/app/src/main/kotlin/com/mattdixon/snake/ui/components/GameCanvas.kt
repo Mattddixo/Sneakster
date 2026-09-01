@@ -15,10 +15,12 @@ import com.mattdixon.snake.engine.Obstacle
 import com.mattdixon.snake.engine.PowerUp
 import com.mattdixon.snake.engine.PowerUpType
 import com.mattdixon.snake.engine.Vec2
+import com.mattdixon.snake.ui.theme.AccentPrimary
 import com.mattdixon.snake.ui.theme.ArenaBackground
 import com.mattdixon.snake.ui.theme.ArenaGrid
 import com.mattdixon.snake.ui.theme.ObstacleColor
 import com.mattdixon.snake.ui.theme.ObstacleWarning
+import com.mattdixon.snake.ui.theme.PowerUpDiamondRotate
 import com.mattdixon.snake.ui.theme.PowerUpSlowDown
 import com.mattdixon.snake.ui.theme.PowerUpSlowMotion
 import com.mattdixon.snake.ui.theme.PowerUpSpawnObstacle
@@ -36,6 +38,7 @@ private fun powerUpColor(type: PowerUpType): Color = when (type) {
     PowerUpType.SLOW_DOWN -> PowerUpSlowDown
     PowerUpType.SLOW_MOTION -> PowerUpSlowMotion
     PowerUpType.SPAWN_OBSTACLE -> PowerUpSpawnObstacle
+    PowerUpType.DIAMOND_ROTATE -> PowerUpDiamondRotate
 }
 
 /**
@@ -53,6 +56,7 @@ fun GameCanvas(state: GameState, arenaWidth: Float, arenaHeight: Float, headRadi
             state.obstacles.forEach { drawObstacle(it, state.elapsedSeconds) }
             state.powerUps.forEach { drawPowerUp(it, state.elapsedSeconds) }
             drawSnake(state, headRadius)
+            drawArenaBorder(arenaWidth, arenaHeight)
         }
     }
 }
@@ -68,6 +72,18 @@ private fun DrawScope.drawGrid(arenaWidth: Float, arenaHeight: Float, spacing: F
         drawLine(ArenaGrid, Offset(0f, y), Offset(arenaWidth, y), strokeWidth = 1f)
         y += spacing
     }
+}
+
+/** A crisp, clearly visible edge so the playable bounds read at a glance, distinct from the
+ * faint background grid — inset by half the stroke width so the whole line stays on-canvas. */
+private fun DrawScope.drawArenaBorder(arenaWidth: Float, arenaHeight: Float, strokeWidth: Float = 3f) {
+    val inset = strokeWidth / 2f
+    drawRect(
+        color = AccentPrimary.copy(alpha = 0.55f),
+        topLeft = Offset(inset, inset),
+        size = androidx.compose.ui.geometry.Size(arenaWidth - strokeWidth, arenaHeight - strokeWidth),
+        style = androidx.compose.ui.graphics.drawscope.Stroke(width = strokeWidth),
+    )
 }
 
 private fun DrawScope.drawSnake(state: GameState, headRadius: Float) {
