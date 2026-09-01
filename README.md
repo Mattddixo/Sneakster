@@ -57,11 +57,10 @@ This starts Postgres and the API, published on host port `8081` by default
 `HOST_PORT` in `.env` if you need a different host port). Point the
 Android app's Settings screen at `<your-tailscale-hostname-or-ip>:8081`.
 
-The `ports:` mapping in `docker-compose.yml` binds `8081` on every
-interface by default, which is fine on a box only reachable over
-Tailscale; if this host is also reachable some other way, bind to the
-tailnet interface's IP specifically instead (e.g.
-`"100.x.x.x:8081:8080"`).
+By default this binds `8081` on every interface, which is fine on a box
+only reachable over Tailscale. If this host is also reachable some other
+way, set `TAILSCALE_IP` in `.env` to your `tailscale ip -4` output to
+restrict the published port to the tailnet interface only.
 
 ## Building the Android app
 

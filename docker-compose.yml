@@ -30,10 +30,11 @@ services:
       ALLOWED_ORIGINS: ${ALLOWED_ORIGINS:-}
     ports:
       # Host port defaults to 8081 (override with HOST_PORT in .env); the container always
-      # listens on 8080 internally. Bind to the tailnet/loopback only — Tailscale's own
-      # interface, not 0.0.0.0 — if this host is reachable from anywhere else, e.g.
-      # "100.x.x.x:${HOST_PORT:-8081}:8080" using your Tailscale IP.
-      - "${HOST_PORT:-8081}:8080"
+      # listens on 8080 internally. TAILSCALE_IP defaults to empty, which Docker treats as
+      # "bind every interface" (0.0.0.0) — fine if this host has no other network exposure.
+      # Set TAILSCALE_IP in .env to your `tailscale ip -4` output to restrict the published
+      # port to the tailnet interface only.
+      - "${TAILSCALE_IP:-0.0.0.0}:${HOST_PORT:-8081}:8080"
 
 volumes:
   sneakster-postgres-data:
