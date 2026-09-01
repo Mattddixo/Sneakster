@@ -90,12 +90,12 @@ class GameEngineTest {
     }
 
     @Test
-    fun `bouncing off a wall while actively steering does not instantly kill you on your own tail`() {
-        // Same straight, no-input approach as the dead-on test above (so the bounce itself is
-        // still a near-180-degree reflection), but the instant the wall bounce happens the
-        // player reacts and starts holding a turn — the realistic case of noticing the wall and
-        // steering away, rather than either holding a turn the whole time (which would just
-        // loop in tight circles and never reach the wall) or never touching the controls at all.
+    fun `bouncing off a wall at a slight angle avoids the tail with no turn input held`() {
+        // A brief nudge before release puts the approach a few degrees off dead-on (about 7-8
+        // degrees at NORMAL's turn rate), then the player lets go entirely: no turn input is
+        // held during the approach, the bounce, or the retrace. Purely on geometry - the wider
+        // neckClearance gives real separation room to build before any collision check even
+        // starts - this angled bounce should clear its own tail, unlike the dead-on case above.
         val config = GameConfig(
             arenaWidth = 2000f,
             arenaHeight = 300f,
@@ -103,21 +103,19 @@ class GameEngineTest {
             minBodyLength = 250f,
         )
         val engine = GameEngine(config, random = Random(1))
+        engine.setTurnInput(TurnInput.LEFT)
+        repeat(3) { engine.update(FIXED_DT) }
+        engine.setTurnInput(TurnInput.NONE)
 
         var framesSinceBounce = -1
         for (frame in 0 until 200) {
             val state = engine.update(FIXED_DT)
             if (framesSinceBounce < 0) {
-                if (state.events.contains(GameEvent.WallBounced)) {
-                    framesSinceBounce = 0
-                    engine.setTurnInput(TurnInput.LEFT)
-                }
+                if (state.events.contains(GameEvent.WallBounced)) framesSinceBounce = 0
             } else {
                 framesSinceBounce++
-                // Grace period is 0.5s (30 frames at 60fps); stay safely inside that window,
-                // then stop — what happens after grace lapses isn't this test's concern.
-                if (framesSinceBounce > 25) break
-                assertEquals(GameStatus.Playing, state.status, "should not die from the wall it just bounced off of while steering away")
+                if (framesSinceBounce > 40) break
+                assertEquals(GameStatus.Playing, state.status, "a slight-angle bounce with no input held should clear its own tail")
             }
         }
 

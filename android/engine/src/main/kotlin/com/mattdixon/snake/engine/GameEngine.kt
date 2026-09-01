@@ -13,10 +13,19 @@ class GameEngine(
     private val config: GameConfig,
     private val random: Random = Random.Default,
 ) {
-    private val bodyCollisionRadius = config.headRadius * 1.6f
-    private val neckClearance = config.headRadius * 3f
+    // These two numbers are what make a wall bounce survivable at an angle: neckClearance is
+    // how far into its own tail the head ignores entirely (skipping past the thick, near-head
+    // section of the trail), and bodyCollisionRadius is how thick a hit actually needs to be
+    // once we start checking. For two straight paths meeting at a vertex (the bounce point) at
+    // angle 2*delta apart, the worst-case separation between them within the checked region
+    // works out to neckClearance * tan(delta) - so neckClearance needs real headroom over
+    // bodyCollisionRadius for a "slight angle" (a handful of degrees) to actually clear. A
+    // truly dead-on bounce (delta = 0) never separates at all - distance stays ~0 - so it still
+    // collides regardless of how these are tuned.
+    private val bodyCollisionRadius = config.headRadius * 0.5f
+    private val neckClearance = config.headRadius * 10f
+    private val headSpawnClearance = config.headRadius * 4f
     private val survivalPointsPerSecondPerSpeedUnit = 0.15f
-    private val selfCollisionGraceSeconds = 0.5f
 
     private var head = Vec2(config.arenaWidth / 2f, config.arenaHeight / 2f)
     private var heading = -PI.toFloat() / 2f
@@ -33,7 +42,6 @@ class GameEngine(
     private var status: GameStatus = GameStatus.Playing
     private var turnInput = TurnInput.NONE
     private var nextId = 1L
-    private var bounceGraceDeadline = 0f
 
     private var nextPowerUpSpawnAt = randomIn(config.difficulty.powerUpSpawnPeriodSeconds)
     private var nextObstacleSpawnAt = randomIn(config.difficulty.obstacleSpawnPeriodSeconds)
@@ -117,16 +125,7 @@ class GameEngine(
         }
 
         head = next
-        if (bounced) {
-            events.add(GameEvent.WallBounced)
-            // A dead-on, no-input bounce sending the head straight back over its own tail is a
-            // fair death. But the same near-180-degree reflection also happens when the player
-            // was already turning away — there, a genuine few-degree deviation should be enough
-            // to eventually clear the tail, except the collision radius is tight enough that it
-            // reads as an instant, unavoidable hit before that separation has time to build. So
-            // the grace window only opens while the player is actively holding a turn.
-            bounceGraceDeadline = elapsedSeconds + selfCollisionGraceSeconds
-        }
+        if (bounced) events.add(GameEvent.WallBounced)
     }
 
     private fun updateBody() {
@@ -144,8 +143,6 @@ class GameEngine(
     }
 
     private fun checkSelfCollision(events: MutableList<GameEvent>) {
-        val activelySteering = turnInput != TurnInput.NONE
-        if (activelySteering && elapsedSeconds < bounceGraceDeadline) return
         var accumulated = 0f
         for (i in 1 until path.size) {
             accumulated += path[i - 1].distanceTo(path[i])
@@ -225,7 +222,7 @@ class GameEngine(
                 x = radius + random.nextFloat() * (config.arenaWidth - 2 * radius),
                 y = radius + random.nextFloat() * (config.arenaHeight - 2 * radius),
             )
-            val clearOfHead = candidate.distanceTo(head) > neckClearance * 2f
+            val clearOfHead = candidate.distanceTo(head) > headSpawnClearance
             val clearOfObstacles = obstacles.none { candidate.distanceTo(it.position) < it.radius + radius + 8f }
             val clearOfPowerUps = powerUps.none { candidate.distanceTo(it.position) < it.radius + radius + 8f }
             if (clearOfHead && clearOfObstacles && clearOfPowerUps) return candidate
