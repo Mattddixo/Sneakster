@@ -1,7 +1,6 @@
 package com.mattdixon.snake.engine
 
 import kotlin.math.PI
-import kotlin.math.min
 import kotlin.random.Random
 
 /**
@@ -14,42 +13,25 @@ class GameEngine(
     private val config: GameConfig,
     private val random: Random = Random.Default,
 ) {
-    // The hit test itself: how close the head's center needs to get to a tail point's center to
-    // count as touching it. This mirrors the obstacle check below (headRadius + the other
-    // thing's radius) - self-collision was missing the "+ headRadius" term entirely, which made
-    // the real hit box a fraction of what's actually drawn on screen and made the tail feel
-    // untouchable during ordinary steering.
-    private val bodyCollisionRadius = config.headRadius * 0.5f
-    private val selfCollisionRadius = config.headRadius + bodyCollisionRadius
-
-    // neckClearance is how far into its own tail (by arc length back from the head) the
-    // collision check ignores entirely - without this, the head would immediately "collide"
-    // with the handful of points it laid down a few frames ago, since consecutive points are
-    // only a frame's travel apart. It also happens to be what makes a wall bounce survivable at
-    // a shallow enough angle: for two straight paths meeting at a vertex (the bounce point) at
-    // angle 2*delta apart, the worst-case separation between them at the edge of the checked
-    // region is neckClearance * tan(delta). A *bigger* neckClearance makes MORE angles survive,
-    // not fewer - a first attempt at this used headRadius * 10, which forgave almost any
-    // deviation past a couple of degrees, making a wall bounce nearly impossible to die from
-    // unless the approach was dead-on straight. This value is deliberately small: only a
-    // genuinely negligible residual heading (a stray frame of input right before release)
-    // should have a shot at surviving a bounce - anything a player would call "I turned"
-    // should still risk hitting its own tail, since the tail sits tight behind the head.
-    // A truly dead-on bounce (delta = 0) never separates at all, so it still collides
-    // regardless of how this is tuned.
-    private val neckClearanceBase = config.headRadius * 3f
-    // ...and capped to a fraction of the CURRENT tail length, not just a flat constant: a flat
-    // clearance bigger than the tail itself would exempt the whole trail from checking, making
-    // self-collision literally impossible whenever the tail is short (e.g. early in a run).
-    private val neckClearanceBodyFraction = 0.6f
     private val headSpawnClearance = config.headRadius * 4f
     private val survivalPointsPerSecondPerSpeedUnit = 0.15f
+
+    // Awarded once, the instant an obstacle is destroyed - well above a single frame's worth of
+    // survival points, so it reads as a deliberate bonus rather than a blip.
+    private val obstacleDestroyScoreBonus = 40f
+
+    // A hit anywhere but the back arc below - the front and sides, the remaining ~260 degrees of
+    // it - still ends the run just like before; only a clean approach from within that cone
+    // destroys it instead.
+    private val obstacleBackArcHalfAngleRadians = OBSTACLE_BACK_ARC_HALF_ANGLE_DEGREES / 180f * PI.toFloat()
 
     private var head = Vec2(config.arenaWidth / 2f, config.arenaHeight / 2f)
     private var heading = -PI.toFloat() / 2f
     private var speed = config.difficulty.baseSpeed * config.scale
-    private val path = ArrayDeque<Vec2>().apply { addFirst(head) }
-    private var bodyLength = config.minBodyLength
+
+    // A short, fixed-length motion trail behind the vehicle - purely cosmetic now that there's
+    // nothing left to collide with back here.
+    private val trail = ArrayDeque<Vec2>().apply { addFirst(head) }
 
     private val obstacles = mutableListOf<Obstacle>()
     private val powerUps = mutableListOf<PowerUp>()
@@ -81,9 +63,11 @@ class GameEngine(
         return true
     }
 
-    /** Test-only hook: places an obstacle at an exact spot instead of a random one. */
-    internal fun debugPlaceObstacle(position: Vec2, radius: Float = config.obstacleRadius, expiresInSeconds: Float = 30f) {
-        obstacles.add(Obstacle(id = nextId++, position = position, radius = radius, spawnedAt = elapsedSeconds, expiresAt = elapsedSeconds + expiresInSeconds))
+    /** Test-only hook: places an obstacle at an exact spot instead of a random one. [facingRadians]
+     * defaults to "facing east" - a value deliberately unrelated to the default straight-up
+     * heading, so a test that doesn't care about front/back doesn't silently get one for free. */
+    internal fun debugPlaceObstacle(position: Vec2, radius: Float = config.obstacleRadius, facingRadians: Float = 0f) {
+        obstacles.add(Obstacle(id = nextId++, position = position, radius = radius, facingRadians = facingRadians, spawnedAt = elapsedSeconds))
     }
 
     /** Test-only hook: places a power-up at an exact spot instead of a random one. */
@@ -95,23 +79,19 @@ class GameEngine(
         if (status != GameStatus.Playing) return snapshot(emptyList())
         val events = mutableListOf<GameEvent>()
 
-        val timeScale = if (isEffectActive(PowerUpType.SLOW_MOTION)) 0.4f else 1f
-        val dt = dtSeconds * timeScale
-        elapsedSeconds += dt
+        elapsedSeconds += dtSeconds
         activeEffects.keys.retainAll { activeEffects.getValue(it) > elapsedSeconds }
 
-        applyTurn(dt)
+        applyTurn(dtSeconds)
         speed = currentSpeed()
-        moveHead(dt, events)
-        updateBody()
+        moveHead(dtSeconds, events)
+        updateTrail()
 
-        checkSelfCollision(events)
         checkObstacleCollisions(events)
-        expireObstacles()
         expirePowerUps()
         checkPowerUpPickups(events)
         maybeSpawnEntities()
-        scoreAccumulator += dt * speed * survivalPointsPerSecondPerSpeedUnit
+        scoreAccumulator += dtSeconds * speed * survivalPointsPerSecondPerSpeedUnit
 
         return snapshot(events)
     }
@@ -159,45 +139,40 @@ class GameEngine(
         if (bounced) events.add(GameEvent.WallBounced)
     }
 
-    private fun updateBody() {
-        path.addFirst(head)
-        bodyLength = (config.minBodyLength + (speed - config.difficulty.baseSpeed * config.scale) * config.bodyLengthPerSpeedUnit)
-            .coerceIn(config.minBodyLength, config.maxBodyLength)
-
+    private fun updateTrail() {
+        trail.addFirst(head)
         var accumulated = 0f
         var keep = 1
-        while (keep < path.size && accumulated < bodyLength) {
-            accumulated += path[keep - 1].distanceTo(path[keep])
+        while (keep < trail.size && accumulated < config.trailLength) {
+            accumulated += trail[keep - 1].distanceTo(trail[keep])
             keep++
         }
-        while (path.size > keep) path.removeLast()
-    }
-
-    private fun checkSelfCollision(events: MutableList<GameEvent>) {
-        val neckClearance = min(neckClearanceBase, bodyLength * neckClearanceBodyFraction)
-        var accumulated = 0f
-        for (i in 1 until path.size) {
-            accumulated += path[i - 1].distanceTo(path[i])
-            if (accumulated < neckClearance) continue
-            if (head.distanceTo(path[i]) < selfCollisionRadius) {
-                endRound(GameOverReason.SELF_COLLISION, events)
-                return
-            }
-        }
+        while (trail.size > keep) trail.removeLast()
     }
 
     private fun checkObstacleCollisions(events: MutableList<GameEvent>) {
-        val hit = obstacles.any { head.distanceTo(it.position) < config.headRadius + it.radius }
-        if (hit) endRound(GameOverReason.OBSTACLE_COLLISION, events)
+        val hit = obstacles.firstOrNull { head.distanceTo(it.position) < config.headRadius + it.radius } ?: return
+        if (isRearHit(hit)) {
+            obstacles.remove(hit)
+            scoreAccumulator += obstacleDestroyScoreBonus
+            events.add(GameEvent.ObstacleDestroyed(hit.id))
+        } else {
+            endRound(GameOverReason.OBSTACLE_COLLISION, events)
+        }
+    }
+
+    /** True if the head struck [obstacle] from within its exposed rear cone - i.e. the head, at
+     * the moment of impact, sits roughly opposite the direction the obstacle is facing. */
+    private fun isRearHit(obstacle: Obstacle): Boolean {
+        val impactAngle = (head - obstacle.position).angleRadians()
+        val rearAngle = normalizeAngle(obstacle.facingRadians + PI.toFloat())
+        val angleFromRear = kotlin.math.abs(normalizeAngle(impactAngle - rearAngle))
+        return angleFromRear < obstacleBackArcHalfAngleRadians
     }
 
     private fun endRound(reason: GameOverReason, events: MutableList<GameEvent>) {
         status = GameStatus.GameOver(reason)
         events.add(GameEvent.RoundEnded(reason))
-    }
-
-    private fun expireObstacles() {
-        obstacles.removeAll { it.expiresAt <= elapsedSeconds }
     }
 
     private fun expirePowerUps() {
@@ -262,13 +237,13 @@ class GameEngine(
                 id = nextId++,
                 position = position,
                 radius = config.obstacleRadius,
+                facingRadians = random.nextFloat() * 2f * PI.toFloat(),
                 spawnedAt = elapsedSeconds,
-                expiresAt = elapsedSeconds + randomIn(config.obstacleLifetimeSeconds),
             ),
         )
     }
 
-    /** Rejection-samples a spot clear of the snake's head and other entities; gives up after a few tries. */
+    /** Rejection-samples a spot clear of the vehicle's head and other entities; gives up after a few tries. */
     private fun findSpawnPosition(radius: Float): Vec2? {
         repeat(20) {
             val candidate = Vec2(
@@ -298,8 +273,7 @@ class GameEngine(
         head = head,
         headingRadians = heading,
         speed = speed,
-        body = path.toList(),
-        bodyLength = bodyLength,
+        trail = trail.toList(),
         obstacles = obstacles.toList(),
         powerUps = powerUps.toList(),
         activeEffects = activeEffects.toMap(),

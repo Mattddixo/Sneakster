@@ -7,11 +7,12 @@ val ArenaGrid = Color(0xFF16221D)
 val SnakeHead = Color(0xFF7CFFB2)
 val SnakeTailFar = Color(0xFF1D6B45)
 val ObstacleColor = Color(0xFFFF5C5C)
-val ObstacleWarning = Color(0xFFFFC24C)
+/** The exposed, destroyable rear arc drawn on every obstacle — deliberately the same inviting
+ * green as the vehicle itself, so "safe to ram" reads at a glance against the danger-red body. */
+val ObstacleBackSafe = Color(0xFF6CFFA0)
 
 val PowerUpSpeedUp = Color(0xFFFFD84C)
 val PowerUpSlowDown = Color(0xFF4CC2FF)
-val PowerUpSlowMotion = Color(0xFFB98CFF)
 val PowerUpSpawnObstacle = Color(0xFFFF6FB0)
 val PowerUpDiamondRotate = Color(0xFF5CE1E6)
 val PowerUpSharedGift = Color(0xFF7CFFC4)

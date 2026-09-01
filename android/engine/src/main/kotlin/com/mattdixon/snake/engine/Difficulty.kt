@@ -18,7 +18,7 @@ enum class Difficulty(
         maxSpeed = 170f,
         rampSeconds = 90f,
         turnRateRadiansPerSecond = 2.4f,
-        obstacleSpawnPeriodSeconds = 10f..16f,
+        obstacleSpawnPeriodSeconds = 6f..10f,
         powerUpSpawnPeriodSeconds = 4f..7f,
     ),
     NORMAL(
@@ -26,7 +26,7 @@ enum class Difficulty(
         maxSpeed = 230f,
         rampSeconds = 75f,
         turnRateRadiansPerSecond = 2.7f,
-        obstacleSpawnPeriodSeconds = 7f..12f,
+        obstacleSpawnPeriodSeconds = 4f..7f,
         powerUpSpawnPeriodSeconds = 5f..8f,
     ),
     HARD(
@@ -34,7 +34,7 @@ enum class Difficulty(
         maxSpeed = 300f,
         rampSeconds = 60f,
         turnRateRadiansPerSecond = 3.0f,
-        obstacleSpawnPeriodSeconds = 5f..9f,
+        obstacleSpawnPeriodSeconds = 3f..6f,
         powerUpSpawnPeriodSeconds = 5f..9f,
     ),
     ;

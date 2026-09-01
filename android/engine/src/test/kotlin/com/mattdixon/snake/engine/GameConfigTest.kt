@@ -16,7 +16,7 @@ class GameConfigTest {
 
         assertEquals(1f, config.scale)
         assertEquals(reference.headRadius, config.headRadius)
-        assertEquals(reference.maxBodyLength, config.maxBodyLength)
+        assertEquals(reference.trailLength, config.trailLength)
     }
 
     @Test
@@ -29,15 +29,15 @@ class GameConfigTest {
 
         // Lengths scale with arena size...
         assertEquals(small.headRadius * 4f, large.headRadius, absoluteTolerance = 0.01f)
-        assertEquals(small.maxBodyLength * 4f, large.maxBodyLength, absoluteTolerance = 0.1f)
+        assertEquals(small.trailLength * 4f, large.trailLength, absoluteTolerance = 0.1f)
 
-        // ...but a purely time-based quantity does not.
-        assertEquals(small.bodyLengthPerSpeedUnit, large.bodyLengthPerSpeedUnit)
+        // ...but a purely count-based quantity does not.
+        assertEquals(small.maxConcurrentObstacles, large.maxConcurrentObstacles)
     }
 
     @Test
-    fun `a snake on a larger arena covers it in the same amount of time as on a smaller one`() {
-        // If speed didn't scale with arena size, a bigger board would make the snake look
+    fun `a vehicle on a larger arena covers it in the same amount of time as on a smaller one`() {
+        // If speed didn't scale with arena size, a bigger board would make the vehicle look
         // relatively slower (more real seconds to cross the same fraction of the screen).
         val small = GameConfig.forArena(arenaWidth = 300f, arenaHeight = 300f)
         val large = GameConfig.forArena(arenaWidth = 600f, arenaHeight = 600f)

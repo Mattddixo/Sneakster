@@ -1,6 +1,7 @@
 package com.mattdixon.snake.engine
 
-enum class GameOverReason { SELF_COLLISION, OBSTACLE_COLLISION }
+/** The only way a run ends now: driving into an obstacle anywhere but its exposed back. */
+enum class GameOverReason { OBSTACLE_COLLISION }
 
 sealed interface GameStatus {
     data object Playing : GameStatus
@@ -11,19 +12,20 @@ sealed interface GameStatus {
 sealed interface GameEvent {
     data object WallBounced : GameEvent
     data class PowerUpCollected(val type: PowerUpType) : GameEvent
+    data class ObstacleDestroyed(val obstacleId: Long) : GameEvent
     data class RoundEnded(val reason: GameOverReason) : GameEvent
 }
 
 /**
- * Immutable snapshot of a running match. [body] is the snake's trail from head to tail,
- * already trimmed to [bodyLength] worth of arc length — the UI can draw it directly.
+ * Immutable snapshot of a running match. [trail] is a short, fixed-length motion trail behind
+ * the vehicle — purely cosmetic, with no bearing on collision (there's nothing left to run into
+ * back there; only [obstacles] are hazards now).
  */
 data class GameState(
     val head: Vec2,
     val headingRadians: Float,
     val speed: Float,
-    val body: List<Vec2>,
-    val bodyLength: Float,
+    val trail: List<Vec2>,
     val obstacles: List<Obstacle>,
     val powerUps: List<PowerUp>,
     val activeEffects: Map<PowerUpType, Float>,

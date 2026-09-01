@@ -1,5 +1,6 @@
 package com.mattdixon.snake.engine
 
+import kotlin.math.atan2
 import kotlin.math.sqrt
 
 data class Vec2(val x: Float, val y: Float) {
@@ -10,6 +11,9 @@ data class Vec2(val x: Float, val y: Float) {
     fun length(): Float = sqrt(x * x + y * y)
 
     fun distanceTo(other: Vec2): Float = (this - other).length()
+
+    /** This vector's direction, in radians, using the same convention as [heading]. */
+    fun angleRadians(): Float = atan2(y, x)
 
     companion object {
         val ZERO = Vec2(0f, 0f)

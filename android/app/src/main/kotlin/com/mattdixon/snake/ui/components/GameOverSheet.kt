@@ -65,8 +65,7 @@ fun GameOverSheet(
                     )
                     Text(
                         text = when (reason) {
-                            GameOverReason.SELF_COLLISION -> "You ran into your own tail"
-                            GameOverReason.OBSTACLE_COLLISION -> "You hit an obstacle"
+                            GameOverReason.OBSTACLE_COLLISION -> "You crashed into an obstacle"
                         },
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.padding(top = 4.dp, bottom = 16.dp),

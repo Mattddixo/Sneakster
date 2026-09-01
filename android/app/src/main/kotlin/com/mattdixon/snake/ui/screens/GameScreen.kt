@@ -128,7 +128,7 @@ fun GameScreen(onExitToMenu: () -> Unit) {
                 val rotation by animateFloatAsState(if (diamondActive) -45f else 0f, tween(600), label = "diamondRotation")
 
                 // Square arena: a game field this shape reads far better than a screen-filling
-                // rectangle, and it's what makes the snake's actual size legible against the
+                // rectangle, and it's what makes the vehicle's actual size legible against the
                 // board. Sized once from arenaSize above (fixed, never itself rotated or scaled)
                 // so it can never grow beyond the space actually available and push the controls
                 // off-screen - the DIAMOND_ROTATE effect below rotates the canvas *inside* this
@@ -240,6 +240,10 @@ private fun handleEvent(
             if (settings.soundEnabled) soundPlayer.playPowerUpCollected(event.type)
             if (settings.hapticsEnabled) haptics.performHapticFeedback(HapticFeedbackType.LongPress)
             if (event.type == PowerUpType.TOKEN) viewModel.awardToken()
+        }
+        is GameEvent.ObstacleDestroyed -> {
+            if (settings.soundEnabled) soundPlayer.playObstacleDestroyed()
+            if (settings.hapticsEnabled) haptics.performHapticFeedback(HapticFeedbackType.LongPress)
         }
         is GameEvent.RoundEnded -> {
             if (settings.soundEnabled) soundPlayer.playGameOver()

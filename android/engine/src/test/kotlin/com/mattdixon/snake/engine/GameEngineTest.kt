@@ -1,5 +1,6 @@
 package com.mattdixon.snake.engine
 
+import kotlin.math.PI
 import kotlin.random.Random
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -17,7 +18,7 @@ class GameEngineTest {
     ) = GameConfig(arenaWidth = arenaWidth, arenaHeight = arenaHeight, difficulty = Difficulty.NORMAL)
 
     @Test
-    fun `snake moves forward along its heading each tick`() {
+    fun `vehicle moves forward along its heading each tick`() {
         val engine = GameEngine(quietConfig(), random = Random(1))
         val start = engine.currentState().head
 
@@ -28,7 +29,7 @@ class GameEngineTest {
     }
 
     @Test
-    fun `snake bounces off the top wall instead of leaving the arena`() {
+    fun `vehicle bounces off the top wall instead of leaving the arena`() {
         // Facing up by default. A short arena means it reaches the top edge in about a
         // second, comfortably before the earliest random obstacle/power-up spawn (~4s).
         val config = quietConfig(arenaHeight = 300f)
@@ -41,121 +42,38 @@ class GameEngineTest {
             assertTrue(state.head.y >= 0f && state.head.y <= config.arenaHeight, "head must stay inside the arena")
         }
 
-        assertTrue(bounced, "expected the snake to bounce off a wall within 3 simulated seconds")
+        assertTrue(bounced, "expected the vehicle to bounce off a wall within 3 simulated seconds")
     }
 
     @Test
-    fun `turning left for a full loop causes self collision when the body is long enough`() {
-        val config = GameConfig(
-            arenaWidth = 4000f,
-            arenaHeight = 4000f,
-            difficulty = Difficulty.HARD, // turnRate 3 rad/s, speed 150 -> turning circle radius 50
-            minBodyLength = 500f, // longer than the ~314-unit circumference, guaranteeing overlap
-        )
+    fun `turning continuously for a long time never ends the round on its own`() {
+        // There's no self-collision at all anymore - obstacles are the only hazard - so looping
+        // back over the vehicle's own earlier path is perfectly safe. Kept comfortably under
+        // HARD's 3-second obstacle-spawn floor so a randomly spawned obstacle can't make this
+        // flaky, and comfortably over one full turning circle (~2.1s at this radius and speed)
+        // so the loop genuinely crosses its own past path at least once.
+        val config = GameConfig(arenaWidth = 4000f, arenaHeight = 4000f, difficulty = Difficulty.HARD)
         val engine = GameEngine(config, random = Random(1))
         engine.setTurnInput(TurnInput.LEFT)
 
-        var gameOverReason: GameOverReason? = null
-        repeat(600) { // 10 simulated seconds, several full loops
-            val state = engine.update(FIXED_DT)
-            val ended = state.events.filterIsInstance<GameEvent.RoundEnded>().firstOrNull()
-            if (ended != null) gameOverReason = ended.reason
-        }
+        var status: GameStatus = GameStatus.Playing
+        repeat(150) { status = engine.update(FIXED_DT).status }
 
-        assertEquals(GameOverReason.SELF_COLLISION, gameOverReason)
+        assertEquals(GameStatus.Playing, status)
     }
 
     @Test
-    fun `bouncing dead-on with no attempt to turn still kills you on your own tail`() {
-        // Default heading is straight up with no turn input held: a short, wide arena makes the
-        // first bounce an exact 180-degree reversal, so the head retraces its own tail with zero
-        // separation. That's a fair death — you drove straight into a wall and straight back into
-        // yourself without ever touching the controls.
-        val config = GameConfig(
-            arenaWidth = 2000f,
-            arenaHeight = 300f,
-            difficulty = Difficulty.NORMAL,
-            minBodyLength = 250f,
-        )
-        val engine = GameEngine(config, random = Random(1))
-
-        var reason: GameOverReason? = null
-        for (frame in 0 until 200) {
-            val state = engine.update(FIXED_DT)
-            (state.status as? GameStatus.GameOver)?.let { reason = it.reason }
-            if (reason != null) break
-        }
-
-        assertEquals(GameOverReason.SELF_COLLISION, reason)
-    }
-
-    @Test
-    fun `bouncing off a wall after only a brief nudge still hits the tail`() {
-        // A brief nudge before release puts the approach a few degrees off dead-on (about 7-8
-        // degrees at NORMAL's turn rate), then the player lets go entirely: no turn input is
-        // held during the approach, the bounce, or the retrace. The tail sits tight behind the
-        // head, so this small a deviation shouldn't be enough to escape it - only a genuinely
-        // negligible residual heading (a stray single frame of input) gets any forgiveness at
-        // all. See the `deliberate` test below for a turn that's actually big enough to clear.
-        val config = GameConfig(
-            arenaWidth = 2000f,
-            arenaHeight = 300f,
-            difficulty = Difficulty.NORMAL,
-            minBodyLength = 250f,
-        )
-        val engine = GameEngine(config, random = Random(1))
-        engine.setTurnInput(TurnInput.LEFT)
-        repeat(3) { engine.update(FIXED_DT) }
-        engine.setTurnInput(TurnInput.NONE)
-
-        var reason: GameOverReason? = null
-        for (frame in 0 until 200) {
-            val state = engine.update(FIXED_DT)
-            (state.status as? GameStatus.GameOver)?.let { reason = it.reason }
-            if (reason != null) break
-        }
-
-        assertEquals(GameOverReason.SELF_COLLISION, reason, "a brief nudge isn't a real enough turn to dodge your own tail on a bounce")
-    }
-
-    @Test
-    fun `bouncing off a wall after a deliberate turn away clears the tail`() {
-        // Unlike the brief nudge above, this holds the turn long enough to point clearly away
-        // from a dead-on retrace (about 50 degrees at NORMAL's turn rate) before releasing -
-        // a real, intentional dodge rather than a stray frame of input. That should still be
-        // enough separation to survive the bounce.
-        val config = GameConfig(
-            arenaWidth = 2000f,
-            arenaHeight = 300f,
-            difficulty = Difficulty.NORMAL,
-            minBodyLength = 250f,
-        )
-        val engine = GameEngine(config, random = Random(1))
-        engine.setTurnInput(TurnInput.LEFT)
-        repeat(20) { engine.update(FIXED_DT) }
-        engine.setTurnInput(TurnInput.NONE)
-
-        var framesSinceBounce = -1
-        for (frame in 0 until 200) {
-            val state = engine.update(FIXED_DT)
-            if (framesSinceBounce < 0) {
-                if (state.events.contains(GameEvent.WallBounced)) framesSinceBounce = 0
-            } else {
-                framesSinceBounce++
-                if (framesSinceBounce > 40) break
-                assertEquals(GameStatus.Playing, state.status, "a deliberate turn away from dead-on should clear the tail on the bounce")
-            }
-        }
-
-        assertTrue(framesSinceBounce >= 0, "expected a wall bounce within the simulated window")
-    }
-
-    @Test
-    fun `running into an obstacle ends the round`() {
+    fun `hitting an obstacle anywhere but its exposed back ends the round`() {
         val engine = GameEngine(quietConfig(), random = Random(1))
         val head = engine.currentState().head
-        // Default heading points up (-y); place an obstacle directly in that path.
-        engine.debugPlaceObstacle(position = Vec2(head.x, head.y - 200f), radius = 20f)
+        // Default heading points up (-y); the obstacle sits directly in that path, facing back
+        // toward the oncoming vehicle - so its exposed rear points away, and the vehicle runs
+        // straight into its front.
+        engine.debugPlaceObstacle(
+            position = Vec2(head.x, head.y - 200f),
+            radius = 20f,
+            facingRadians = PI.toFloat() / 2f, // facing down, toward the oncoming vehicle
+        )
 
         var reason: GameOverReason? = null
         repeat(300) {
@@ -167,7 +85,38 @@ class GameEngineTest {
     }
 
     @Test
-    fun `collecting a speed-up power-up increases speed and body length`() {
+    fun `ramming an obstacle from its exposed back destroys it and awards a score bonus`() {
+        val engine = GameEngine(quietConfig(), random = Random(1))
+        val head = engine.currentState().head
+        // Same setup, but the obstacle now faces the same way the vehicle is already heading
+        // (up) - so its exposed back is the underside, exactly where the vehicle approaches from.
+        engine.debugPlaceObstacle(
+            position = Vec2(head.x, head.y - 200f),
+            radius = 20f,
+            facingRadians = -PI.toFloat() / 2f, // facing up, same direction as the oncoming vehicle
+        )
+
+        var scoreBeforeHit = 0
+        var scoreAfterHit: Int? = null
+        var finalStatus: GameStatus = GameStatus.Playing
+        repeat(300) {
+            val prevScore = engine.currentState().score
+            val state = engine.update(FIXED_DT)
+            finalStatus = state.status
+            if (scoreAfterHit == null && state.events.any { it is GameEvent.ObstacleDestroyed }) {
+                scoreBeforeHit = prevScore
+                scoreAfterHit = state.score
+            }
+        }
+
+        val after = requireNotNull(scoreAfterHit) { "expected the vehicle to destroy the obstacle by ramming its exposed back" }
+        assertTrue(after - scoreBeforeHit >= 30, "destroying an obstacle should add a real score bonus, not just one frame of survival points")
+        assertEquals(GameStatus.Playing, finalStatus, "destroying an obstacle from behind shouldn't end the round")
+        assertTrue(engine.currentState().obstacles.isEmpty(), "the destroyed obstacle should be gone from the board")
+    }
+
+    @Test
+    fun `collecting a speed-up power-up increases speed`() {
         val engine = GameEngine(quietConfig(), random = Random(1))
         val head = engine.currentState().head
         engine.debugPlacePowerUp(position = Vec2(head.x, head.y - 100f), type = PowerUpType.SPEED_UP)
@@ -182,33 +131,9 @@ class GameEngineTest {
             }
         }
 
-        assertTrue(collected, "expected the snake to reach and collect the power-up")
+        assertTrue(collected, "expected the vehicle to reach and collect the power-up")
         assertTrue(stateAfter.activeEffects.containsKey(PowerUpType.SPEED_UP))
         assertTrue(stateAfter.speed > Difficulty.NORMAL.baseSpeed, "speed-up should raise speed above the base ramp value")
-    }
-
-    @Test
-    fun `slow motion effect scales down elapsed simulation time`() {
-        val engine = GameEngine(quietConfig(), random = Random(1))
-        val head = engine.currentState().head
-        engine.debugPlacePowerUp(position = Vec2(head.x, head.y - 50f), type = PowerUpType.SLOW_MOTION)
-
-        var collectedAtElapsed: Float? = null
-        var state = engine.currentState()
-        repeat(200) {
-            state = engine.update(FIXED_DT)
-            if (collectedAtElapsed == null && state.events.any { it is GameEvent.PowerUpCollected }) {
-                collectedAtElapsed = state.elapsedSeconds
-            }
-        }
-        val collectedAt = requireNotNull(collectedAtElapsed) { "power-up was never collected" }
-
-        val elapsedBeforeSlowMotionTick = state.elapsedSeconds
-        state = engine.update(FIXED_DT)
-        val gained = state.elapsedSeconds - elapsedBeforeSlowMotionTick
-
-        assertTrue(collectedAt > 0f)
-        assertTrue(gained < FIXED_DT, "while slow motion is active, sim time should advance slower than real time")
     }
 
     @Test
@@ -220,14 +145,10 @@ class GameEngineTest {
 
     @Test
     fun `a token disappears on its own if not collected in time`() {
-        // A big arena, not the usual 2000x2000 quietConfig default: this run goes on long enough
-        // (10 simulated seconds) that a smaller arena's walls would be reached with no turn input
-        // held, ending the round in a dead-on self-collision before the token's lifetime is even
-        // up. This is only about the timer, so give the snake room to never hit a wall at all.
-        val engine = GameEngine(quietConfig(arenaWidth = 20_000f, arenaHeight = 20_000f), random = Random(1))
+        val engine = GameEngine(quietConfig(), random = Random(1))
         val head = engine.currentState().head
-        // Well outside the arena bounds anyway, so the snake can never actually reach it - this
-        // test is only about the timer, not about collection.
+        // Well outside the arena bounds, so the vehicle can never actually reach it - this test
+        // is only about the timer, not about collection.
         engine.debugPlacePowerUp(position = Vec2(head.x + 50_000f, head.y + 50_000f), type = PowerUpType.TOKEN)
 
         val justPlaced = engine.update(FIXED_DT)

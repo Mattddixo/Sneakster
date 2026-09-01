@@ -1,9 +1,11 @@
 # Sneakster
 
-A snake game that isn't locked to a grid. The snake always moves forward and
-turns with two on-screen buttons; it picks up speed the longer you survive,
-bounces off the arena's edges instead of dying there, and grows a longer tail
-the faster it goes. Glowing pickups and temporary obstacles keep runs from
+A top-down driving game that isn't locked to a grid. Your vehicle always
+moves forward and turns with two on-screen buttons, picking up speed the
+longer you survive and bouncing off the arena's edges instead of dying
+there. Obstacles are the whole point: hit one anywhere but its exposed back
+and the run ends, but ram it from behind and it's destroyed for a solid
+score bonus. Glowing pickups and a shared effects pool keep runs from
 feeling the same twice. Scores go to a small self-hosted leaderboard.
 
 - **`android/`** — the game itself: a Kotlin + Jetpack Compose app.
@@ -18,14 +20,17 @@ feeling the same twice. Scores go to a small self-hosted leaderboard.
   high it ramps, depends on the difficulty you pick in Settings) — the
   challenge comes from a ticking clock, not a sudden jump.
 - Hitting the arena's edge bounces you back in instead of ending the run.
-- The snake's tail is longer at higher speed. Touching your own tail ends
-  the run.
-- Glowing circles are optional pickups: speed up, slow down, a few seconds
-  of slow motion, dropping fresh obstacles onto the field in exchange for
-  bonus points, or a rare one that rotates the whole arena 45° into a
-  diamond for a while.
-- Obstacles disappear after several seconds (flashing a countdown ring as
-  they run out); running into one ends the run just like your own tail does.
+- Obstacles are the core of the game: each one has an exposed "back," shown
+  as a distinctly colored wedge on the obstacle itself. Hit it anywhere else
+  and the run ends; ram it from that back wedge and it's destroyed instead,
+  awarding a solid score bonus on top of the points you're already earning
+  just for staying alive. Obstacles don't expire on their own — they sit
+  there until you destroy one or the run ends.
+- Glowing circles are optional pickups: speed up, slow down, dropping fresh
+  obstacles onto the field in exchange for bonus points (more hazards to
+  dodge, but also more exposed backs to farm), or a rare one that rotates
+  the whole arena 45° — clipped rather than shrunk to fit, so it reads as
+  an octagon partway through the turn.
 - Everything in a match is configurable ahead of time from Settings:
   difficulty, turn sensitivity, sound, haptics, and the leaderboard
   server's address.
@@ -43,7 +48,7 @@ other something without ever knowing who it came from. See
 ## Repo layout and why it's split this way
 
 The `engine` module (`android/engine`) holds the entire simulation — movement,
-wall bounces, collisions, pickups, obstacle lifetimes, scoring — as plain
+wall bounces, obstacle collision and destruction, pickups, scoring — as plain
 Kotlin with no Android dependency. That's what `android/engine/src/test`
 exercises directly with JUnit 5, independent of an emulator or device. The
 `app` module (`android/app`) is Compose UI, a thin `GameViewModel` that

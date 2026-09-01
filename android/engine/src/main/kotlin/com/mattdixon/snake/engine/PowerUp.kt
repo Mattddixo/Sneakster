@@ -17,10 +17,8 @@ enum class PowerUpType(
     /** Eases speed off for a few seconds so a tight spot can be threaded safely. */
     SLOW_DOWN(scoreBonus = 10, effectDurationSeconds = 5f),
 
-    /** Dilates time itself — movement, turning and timers all run at a fraction of speed. */
-    SLOW_MOTION(scoreBonus = 20, effectDurationSeconds = 3f),
-
-    /** Risk/reward: drops fresh obstacles elsewhere on the field in exchange for bonus points. */
+    /** Risk/reward: drops fresh obstacles elsewhere on the field in exchange for bonus points -
+     * more hazards to dodge, but also more exposed backs to ram for a destroy bonus. */
     SPAWN_OBSTACLE(scoreBonus = 30, effectDurationSeconds = 0f),
 
     /** Purely visual: the UI spins the arena from square to diamond and back. Doesn't touch

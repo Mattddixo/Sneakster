@@ -3,10 +3,11 @@
 Kotlin + Jetpack Compose. Two Gradle modules:
 
 - **`engine/`** — the entire game simulation as plain Kotlin (no Android
-  dependency): movement, wall bounces, self/obstacle collision, pickups,
-  obstacle lifetimes, scoring, difficulty ramps. Fully unit-tested with
-  JUnit 5 (`./gradlew :engine:test`) — this is the part correctness bugs
-  would actually live in, and it runs on any JVM without an emulator.
+  dependency): movement, wall bounces, obstacle collision (front/side ends
+  the run, an exposed-back hit destroys the obstacle), pickups, scoring,
+  difficulty ramps. Fully unit-tested with JUnit 5 (`./gradlew :engine:test`)
+  — this is the part correctness bugs would actually live in, and it runs
+  on any JVM without an emulator.
 - **`app/`** — the Compose UI, on-screen controls, a `GameViewModel` that
   drives one `engine` tick per frame via `withFrameNanos`, and the
   networking/settings glue.
@@ -17,7 +18,7 @@ Requires Android Studio (or the command-line SDK) with **compileSdk 34**
 installed, and a JDK 17+. This wasn't built or run against a device or
 emulator while writing it — the sandbox this was developed in has no
 Android SDK, only a plain JDK, so only `:engine`'s pure-Kotlin logic could
-actually be compiled and tested here (`./gradlew :engine:test` — 17/17
+actually be compiled and tested here (`./gradlew :engine:test` — 15/15
 passing). The `app` module's Compose code was written and reviewed
 carefully, but treat first-build teething issues (a missing SDK component,
 a dependency version bump) as more likely here than in `engine`.

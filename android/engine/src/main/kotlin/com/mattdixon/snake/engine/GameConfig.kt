@@ -8,7 +8,7 @@ package com.mattdixon.snake.engine
  * [forArena] over calling this constructor directly: it derives every size and speed from the
  * actual arena so a phone with a narrower or wider arena than the reference gets a
  * proportionally identical game rather than the same absolute pixel counts (which is what used
- * to make the snake, obstacles and pickups look mis-scaled against the board on some devices).
+ * to make the vehicle, obstacles and pickups look mis-scaled against the board on some devices).
  */
 data class GameConfig(
     val arenaWidth: Float,
@@ -19,14 +19,12 @@ data class GameConfig(
      * are already absolute — see [forArena] for why they don't need their own scale factor. */
     val scale: Float = 1f,
     val headRadius: Float = 7f,
-    val minBodyLength: Float = 55f,
-    val maxBodyLength: Float = 600f,
-    val bodyLengthPerSpeedUnit: Float = 2.2f,
+    /** Purely cosmetic motion trail behind the vehicle — fixed length, no bearing on collision. */
+    val trailLength: Float = 40f,
     val obstacleRadius: Float = 15f,
-    val obstacleLifetimeSeconds: ClosedFloatingPointRange<Float> = 6f..10f,
     val powerUpRadius: Float = 11f,
     val maxConcurrentPowerUps: Int = 2,
-    val maxConcurrentObstacles: Int = 4,
+    val maxConcurrentObstacles: Int = 7,
     val tokenRadius: Float = 9f,
     val tokenSpawnPeriodSeconds: ClosedFloatingPointRange<Float> = 12f..20f,
     val maxConcurrentTokens: Int = 1,
@@ -44,12 +42,11 @@ data class GameConfig(
 
         /**
          * Derives a [GameConfig] whose every size and speed is proportional to [arenaWidth]/
-         * [arenaHeight] instead of using the fixed defaults directly. Lengths (radii, body
+         * [arenaHeight] instead of using the fixed defaults directly. Lengths (radii, trail
          * length) and speeds (via [scale], applied to [Difficulty]'s values) both scale with
          * arena size; purely time- or angle-based quantities (turn rate, ramp duration, spawn
-         * periods, [bodyLengthPerSpeedUnit]) don't, by dimensional analysis: a "seconds to
-         * cross the arena" quantity should stay constant across devices, not shrink or grow
-         * with screen size.
+         * periods) don't, by dimensional analysis: a "seconds to cross the arena" quantity
+         * should stay constant across devices, not shrink or grow with screen size.
          */
         fun forArena(
             arenaWidth: Float,
@@ -64,14 +61,10 @@ data class GameConfig(
                 controlSensitivity = controlSensitivity,
                 scale = k,
                 headRadius = reference.headRadius * k,
-                minBodyLength = reference.minBodyLength * k,
-                maxBodyLength = reference.maxBodyLength * k,
+                trailLength = reference.trailLength * k,
                 obstacleRadius = reference.obstacleRadius * k,
                 powerUpRadius = reference.powerUpRadius * k,
                 tokenRadius = reference.tokenRadius * k,
-                // bodyLengthPerSpeedUnit intentionally left unscaled: it converts a speed excess
-                // (which itself scales by k) into a length, so the length contribution already
-                // scales by k without this needing to change too.
             )
         }
     }
