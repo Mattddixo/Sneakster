@@ -29,9 +29,11 @@ services:
       # app doesn't send an Origin header so this can stay empty for a phone-only setup.
       ALLOWED_ORIGINS: ${ALLOWED_ORIGINS:-}
     ports:
-      # Bind to the tailnet/loopback only — Tailscale's own interface, not 0.0.0.0 — if this
-      # host is reachable from anywhere else. Adjust to your Tailscale IP as needed.
-      - "8080:8080"
+      # Host port defaults to 8081 (override with HOST_PORT in .env); the container always
+      # listens on 8080 internally. Bind to the tailnet/loopback only — Tailscale's own
+      # interface, not 0.0.0.0 — if this host is reachable from anywhere else, e.g.
+      # "100.x.x.x:${HOST_PORT:-8081}:8080" using your Tailscale IP.
+      - "${HOST_PORT:-8081}:8080"
 
 volumes:
   sneakster-postgres-data:

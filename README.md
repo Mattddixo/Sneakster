@@ -52,13 +52,16 @@ cp .env.example .env   # set a real POSTGRES_PASSWORD
 docker compose up --build -d
 ```
 
-This starts Postgres and the API (default port `8080`). Point the Android
-app's Settings screen at `<your-tailscale-hostname-or-ip>:8080`.
+This starts Postgres and the API, published on host port `8081` by default
+(the container always listens on `8080` internally; override with
+`HOST_PORT` in `.env` if you need a different host port). Point the
+Android app's Settings screen at `<your-tailscale-hostname-or-ip>:8081`.
 
-The `ports:` mapping in `docker-compose.yml` binds `8080` on every interface
-by default, which is fine on a box only reachable over Tailscale; if this
-host is also reachable some other way, bind to the tailnet interface's IP
-specifically instead (e.g. `"100.x.x.x:8080:8080"`).
+The `ports:` mapping in `docker-compose.yml` binds `8081` on every
+interface by default, which is fine on a box only reachable over
+Tailscale; if this host is also reachable some other way, bind to the
+tailnet interface's IP specifically instead (e.g.
+`"100.x.x.x:8081:8080"`).
 
 ## Building the Android app
 
