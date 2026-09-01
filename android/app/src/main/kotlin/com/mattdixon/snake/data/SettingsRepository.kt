@@ -24,6 +24,7 @@ class SettingsRepository(private val context: Context) {
         val NICKNAME = stringPreferencesKey("nickname")
         val SERVER_BASE_URL = stringPreferencesKey("server_base_url")
         val BEST_SCORE = intPreferencesKey("best_score")
+        val TOKEN_BALANCE = intPreferencesKey("token_balance")
     }
 
     val settings: Flow<GameSettings> = context.dataStore.data.map { prefs ->
@@ -35,6 +36,7 @@ class SettingsRepository(private val context: Context) {
             nickname = prefs[Keys.NICKNAME] ?: "",
             serverBaseUrl = prefs[Keys.SERVER_BASE_URL] ?: "",
             bestScore = prefs[Keys.BEST_SCORE] ?: 0,
+            tokenBalance = prefs[Keys.TOKEN_BALANCE] ?: 0,
         )
     }
 
@@ -69,5 +71,26 @@ class SettingsRepository(private val context: Context) {
             val current = it[Keys.BEST_SCORE] ?: 0
             if (score > current) it[Keys.BEST_SCORE] = score
         }
+    }
+
+    suspend fun addTokens(count: Int) {
+        context.dataStore.edit {
+            it[Keys.TOKEN_BALANCE] = (it[Keys.TOKEN_BALANCE] ?: 0) + count
+        }
+    }
+
+    /** Deducts [cost] tokens and returns true, or leaves the balance untouched and returns
+     * false if it's insufficient. DataStore's edit block is an atomic read-modify-write, so
+     * this is safe even if two spends somehow raced. */
+    suspend fun trySpendTokens(cost: Int): Boolean {
+        var spent = false
+        context.dataStore.edit {
+            val current = it[Keys.TOKEN_BALANCE] ?: 0
+            if (current >= cost) {
+                it[Keys.TOKEN_BALANCE] = current - cost
+                spent = true
+            }
+        }
+        return spent
     }
 }

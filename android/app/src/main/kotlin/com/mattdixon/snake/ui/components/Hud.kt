@@ -18,6 +18,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.mattdixon.snake.engine.PowerUpType
 import com.mattdixon.snake.ui.theme.PowerUpDiamondRotate
+import com.mattdixon.snake.ui.theme.PowerUpSharedGift
+import com.mattdixon.snake.ui.theme.PowerUpSharedPrank
 import com.mattdixon.snake.ui.theme.PowerUpSlowDown
 import com.mattdixon.snake.ui.theme.PowerUpSlowMotion
 import com.mattdixon.snake.ui.theme.PowerUpSpeedUp
@@ -69,7 +71,9 @@ private fun RowScope.EffectBadge(type: PowerUpType) {
         PowerUpType.SLOW_DOWN -> "SLOW" to PowerUpSlowDown
         PowerUpType.SLOW_MOTION -> "SLOMO" to PowerUpSlowMotion
         PowerUpType.DIAMOND_ROTATE -> "SPIN" to PowerUpDiamondRotate
-        PowerUpType.SPAWN_OBSTACLE -> return
+        PowerUpType.SHARED_GIFT -> "GIFT" to PowerUpSharedGift
+        PowerUpType.SHARED_PRANK -> "PRANK" to PowerUpSharedPrank
+        PowerUpType.SPAWN_OBSTACLE, PowerUpType.TOKEN -> return
     }
     Text(
         text = label,

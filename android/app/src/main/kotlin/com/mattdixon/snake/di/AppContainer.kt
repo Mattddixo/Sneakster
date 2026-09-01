@@ -4,7 +4,9 @@ import android.content.Context
 import com.mattdixon.snake.BuildConfig
 import com.mattdixon.snake.data.GameSettings
 import com.mattdixon.snake.data.LeaderboardService
+import com.mattdixon.snake.data.PoolService
 import com.mattdixon.snake.data.SettingsRepository
+import com.mattdixon.snake.data.createSneaksterHttpClient
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -24,7 +26,9 @@ class AppContainer(context: Context, applicationScope: CoroutineScope) {
         initialValue = GameSettings(),
     )
 
-    val leaderboardService = LeaderboardService(
-        baseUrl = { settingsState.value.serverBaseUrl.ifBlank { BuildConfig.DEFAULT_SERVER_BASE_URL } },
-    )
+    private val httpClient = createSneaksterHttpClient()
+    private val serverBaseUrl = { settingsState.value.serverBaseUrl.ifBlank { BuildConfig.DEFAULT_SERVER_BASE_URL } }
+
+    val leaderboardService = LeaderboardService(httpClient, serverBaseUrl)
+    val poolService = PoolService(httpClient, serverBaseUrl)
 }

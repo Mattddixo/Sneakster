@@ -21,12 +21,15 @@ import com.mattdixon.snake.ui.theme.ArenaGrid
 import com.mattdixon.snake.ui.theme.ObstacleColor
 import com.mattdixon.snake.ui.theme.ObstacleWarning
 import com.mattdixon.snake.ui.theme.PowerUpDiamondRotate
+import com.mattdixon.snake.ui.theme.PowerUpSharedGift
+import com.mattdixon.snake.ui.theme.PowerUpSharedPrank
 import com.mattdixon.snake.ui.theme.PowerUpSlowDown
 import com.mattdixon.snake.ui.theme.PowerUpSlowMotion
 import com.mattdixon.snake.ui.theme.PowerUpSpawnObstacle
 import com.mattdixon.snake.ui.theme.PowerUpSpeedUp
 import com.mattdixon.snake.ui.theme.SnakeHead
 import com.mattdixon.snake.ui.theme.SnakeTailFar
+import com.mattdixon.snake.ui.theme.TokenColor
 import kotlin.math.sin
 
 private fun Vec2.toOffset() = Offset(x, y)
@@ -39,6 +42,9 @@ private fun powerUpColor(type: PowerUpType): Color = when (type) {
     PowerUpType.SLOW_MOTION -> PowerUpSlowMotion
     PowerUpType.SPAWN_OBSTACLE -> PowerUpSpawnObstacle
     PowerUpType.DIAMOND_ROTATE -> PowerUpDiamondRotate
+    PowerUpType.TOKEN -> TokenColor
+    PowerUpType.SHARED_GIFT -> PowerUpSharedGift
+    PowerUpType.SHARED_PRANK -> PowerUpSharedPrank
 }
 
 /**
@@ -124,6 +130,22 @@ private fun DrawScope.drawPowerUp(powerUp: PowerUp, elapsedSeconds: Float) {
     drawGlow(center = center, color = color, radius = powerUp.radius * 3.5f * pulse)
     drawCircle(color = color, radius = powerUp.radius * pulse, center = center)
     drawCircle(color = Color.White.copy(alpha = 0.6f), radius = powerUp.radius * 0.35f * pulse, center = center)
+
+    // Unlike most power-ups (which just sit there until collected), a few disappear on their
+    // own — show that countdown as a shrinking ring rather than letting it vanish with no warning.
+    val lifetime = powerUp.type.lifetimeSeconds
+    if (lifetime != null) {
+        val remaining = (1f - (elapsedSeconds - powerUp.spawnedAt) / lifetime).coerceIn(0f, 1f)
+        drawArc(
+            color = Color.White.copy(alpha = 0.8f),
+            startAngle = -90f,
+            sweepAngle = 360f * remaining,
+            useCenter = false,
+            topLeft = Offset(center.x - powerUp.radius, center.y - powerUp.radius),
+            size = androidx.compose.ui.geometry.Size(powerUp.radius * 2f, powerUp.radius * 2f),
+            style = androidx.compose.ui.graphics.drawscope.Stroke(width = 2f),
+        )
+    }
 }
 
 private fun DrawScope.drawObstacle(obstacle: Obstacle, elapsedSeconds: Float) {

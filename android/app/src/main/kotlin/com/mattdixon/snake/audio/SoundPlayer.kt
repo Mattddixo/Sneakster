@@ -18,9 +18,11 @@ class SoundPlayer {
 
     fun playPowerUpCollected(type: PowerUpType) {
         val tone = when (type) {
-            PowerUpType.SPEED_UP -> ToneGenerator.TONE_PROP_ACK
+            PowerUpType.SPEED_UP, PowerUpType.SHARED_GIFT -> ToneGenerator.TONE_PROP_ACK
             PowerUpType.SLOW_DOWN, PowerUpType.SLOW_MOTION -> ToneGenerator.TONE_PROP_NACK
-            PowerUpType.SPAWN_OBSTACLE -> ToneGenerator.TONE_PROP_PROMPT
+            PowerUpType.SPAWN_OBSTACLE, PowerUpType.SHARED_PRANK -> ToneGenerator.TONE_PROP_PROMPT
+            PowerUpType.DIAMOND_ROTATE -> ToneGenerator.TONE_PROP_BEEP2
+            PowerUpType.TOKEN -> ToneGenerator.TONE_PROP_BEEP
         }
         toneGenerator?.startTone(tone, 90)
     }

@@ -77,7 +77,7 @@ fun GameScreen(onExitToMenu: () -> Unit) {
     val settings by container.settingsState.collectAsState()
     val viewModel: GameViewModel = viewModel(
         factory = viewModelFactory {
-            initializer { GameViewModel(container.settingsRepository, container.leaderboardService) }
+            initializer { GameViewModel(container.settingsRepository, container.leaderboardService, container.poolService) }
         },
     )
     val uiState by viewModel.uiState.collectAsState()
@@ -194,6 +194,8 @@ fun GameScreen(onExitToMenu: () -> Unit) {
                 reason = status.reason,
                 score = uiState.gameState?.score ?: 0,
                 bestScore = settings.bestScore,
+                difficulty = settings.difficulty,
+                controlSensitivity = settings.controlSensitivity,
                 nickname = nickname,
                 onNicknameChange = { nickname = it },
                 isSubmitting = isSubmitting,
@@ -236,6 +238,7 @@ private fun handleEvent(
         is GameEvent.PowerUpCollected -> {
             if (settings.soundEnabled) soundPlayer.playPowerUpCollected(event.type)
             if (settings.hapticsEnabled) haptics.performHapticFeedback(HapticFeedbackType.LongPress)
+            if (event.type == PowerUpType.TOKEN) viewModel.awardToken()
         }
         is GameEvent.RoundEnded -> {
             if (settings.soundEnabled) soundPlayer.playGameOver()

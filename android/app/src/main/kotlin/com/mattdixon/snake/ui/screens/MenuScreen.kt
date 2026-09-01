@@ -26,7 +26,7 @@ import androidx.compose.ui.unit.sp
 import com.mattdixon.snake.ui.LocalAppContainer
 
 @Composable
-fun MenuScreen(onPlay: () -> Unit, onLeaderboard: () -> Unit, onSettings: () -> Unit) {
+fun MenuScreen(onPlay: () -> Unit, onLeaderboard: () -> Unit, onSettings: () -> Unit, onShop: () -> Unit) {
     val container = LocalAppContainer.current
     val settings by container.settingsState.collectAsState()
 
@@ -67,6 +67,9 @@ fun MenuScreen(onPlay: () -> Unit, onLeaderboard: () -> Unit, onSettings: () -> 
             }
             OutlinedButton(onClick = onSettings, modifier = Modifier.fillMaxWidth()) {
                 Text("Settings")
+            }
+            OutlinedButton(onClick = onShop, modifier = Modifier.fillMaxWidth()) {
+                Text("Shop (${settings.tokenBalance})")
             }
         }
     }

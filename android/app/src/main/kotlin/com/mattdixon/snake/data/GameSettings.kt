@@ -10,6 +10,7 @@ data class GameSettings(
     val nickname: String = "",
     val serverBaseUrl: String = "",
     val bestScore: Int = 0,
+    val tokenBalance: Int = 0,
 ) {
     companion object {
         const val MIN_SENSITIVITY = 0.6f

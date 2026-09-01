@@ -27,6 +27,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.mattdixon.snake.engine.Difficulty
 import com.mattdixon.snake.engine.GameOverReason
 
 @Composable
@@ -34,6 +35,8 @@ fun GameOverSheet(
     reason: GameOverReason,
     score: Int,
     bestScore: Int,
+    difficulty: Difficulty,
+    controlSensitivity: Float,
     nickname: String,
     onNicknameChange: (String) -> Unit,
     isSubmitting: Boolean,
@@ -70,9 +73,15 @@ fun GameOverSheet(
                     )
                     Text(text = "$score", fontSize = 48.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
                     Text(
+                        text = "${difficulty.name.lowercase().replaceFirstChar { it.uppercase() }} · ${"%.1f".format(controlSensitivity)}x sensitivity",
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        fontSize = 12.sp,
+                        modifier = Modifier.padding(top = 2.dp),
+                    )
+                    Text(
                         text = if (score > bestScore) "New best!" else "Best: $bestScore",
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.padding(bottom = 20.dp),
+                        modifier = Modifier.padding(top = 6.dp, bottom = 20.dp),
                     )
 
                     if (hasSubmitted) {
