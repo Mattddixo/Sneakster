@@ -28,6 +28,8 @@ import kotlin.math.sin
 
 private fun Vec2.toOffset() = Offset(x, y)
 
+private fun lerpFloat(start: Float, stop: Float, fraction: Float): Float = start + (stop - start) * fraction
+
 private fun powerUpColor(type: PowerUpType): Color = when (type) {
     PowerUpType.SPEED_UP -> PowerUpSpeedUp
     PowerUpType.SLOW_DOWN -> PowerUpSlowDown
@@ -66,7 +68,7 @@ private fun DrawScope.drawSnake(state: GameState, headRadius: Float) {
     // Tail-to-head so the head's glow paints on top of the body it overlaps near the neck.
     for (i in body.indices.reversed()) {
         val fraction = i / lastIndex.toFloat()
-        val radius = lerp(headRadius, headRadius * 0.35f, fraction)
+        val radius = lerpFloat(headRadius, headRadius * 0.35f, fraction)
         val color = lerp(SnakeHead, SnakeTailFar, fraction)
         drawCircle(color = color, radius = radius, center = body[i].toOffset())
     }
