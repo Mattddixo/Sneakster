@@ -31,6 +31,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.hapticfeedback.HapticFeedback
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
@@ -53,23 +54,20 @@ import com.mattdixon.snake.ui.components.ControlPad
 import com.mattdixon.snake.ui.components.GameCanvas
 import com.mattdixon.snake.ui.components.GameHud
 import com.mattdixon.snake.ui.components.GameOverSheet
+import com.mattdixon.snake.ui.components.PowerUpLegend
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 
 private const val MAX_FRAME_DT_SECONDS = 1f / 20f // clamps the hitch after a dropped frame or app-switch
 
 // Generous, fixed estimate of everything above/below the square arena (back button row, HUD,
-// control pad, gaps) so the arena size can be computed in one measurement pass instead of a
-// multi-pass layout. Comfortably larger than the real content on any phone, so on the vast
+// legend, control pad, gaps) so the arena size can be computed in one measurement pass instead
+// of a multi-pass layout. Comfortably larger than the real content on any phone, so on the vast
 // majority of devices (where the arena is width-limited, not height-limited) this never even
 // binds — it's a safety cap against overflow on unusually short or wide screens, not a
 // day-to-day constraint.
-private val RESERVED_NON_ARENA_HEIGHT = 300.dp
+private val RESERVED_NON_ARENA_HEIGHT = 336.dp
 private val MIN_ARENA_SIZE = 120.dp
-
-/** exactly 1/sqrt(2): shrinks a square by the amount a 45-degree rotation would otherwise grow
- * its bounding box by, so the rotated diamond never exceeds the original square's footprint. */
-private const val DIAMOND_SCALE = 0.70710677f
 
 @Composable
 fun GameScreen(onExitToMenu: () -> Unit) {
@@ -121,26 +119,27 @@ fun GameScreen(onExitToMenu: () -> Unit) {
                         activeEffects = gameState.activeEffects,
                         elapsedSeconds = gameState.elapsedSeconds,
                     )
+                    PowerUpLegend(modifier = Modifier.padding(top = 8.dp))
                 }
 
                 Spacer(Modifier.weight(1f))
 
                 val diamondActive = gameState?.activeEffects?.containsKey(PowerUpType.DIAMOND_ROTATE) == true
                 val rotation by animateFloatAsState(if (diamondActive) -45f else 0f, tween(600), label = "diamondRotation")
-                val diamondScale by animateFloatAsState(if (diamondActive) DIAMOND_SCALE else 1f, tween(600), label = "diamondScale")
 
                 // Square arena: a game field this shape reads far better than a screen-filling
                 // rectangle, and it's what makes the snake's actual size legible against the
-                // board. Sized once from arenaSize above, so it can never grow beyond the space
-                // actually available and push the controls off-screen.
+                // board. Sized once from arenaSize above (fixed, never itself rotated or scaled)
+                // so it can never grow beyond the space actually available and push the controls
+                // off-screen - the DIAMOND_ROTATE effect below rotates the canvas *inside* this
+                // fixed window and lets clipToBounds cut off whatever swings past its edges,
+                // rather than shrinking the whole board to keep every corner in view. A square
+                // clipped by a same-size square rotated up to 45 degrees reads as an octagon
+                // partway through the turn, not a shrinking diamond.
                 Box(
                     modifier = Modifier
                         .size(arenaSize)
-                        .graphicsLayer {
-                            rotationZ = rotation
-                            scaleX = diamondScale
-                            scaleY = diamondScale
-                        }
+                        .clipToBounds()
                         .onSizeChanged { size ->
                             if (!hasStarted && size.width > 0 && size.height > 0) {
                                 hasStarted = true
@@ -158,7 +157,9 @@ fun GameScreen(onExitToMenu: () -> Unit) {
                             arenaWidth = uiState.arenaWidth,
                             arenaHeight = uiState.arenaHeight,
                             headRadius = uiState.headRadius,
-                            modifier = Modifier.fillMaxSize(),
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .graphicsLayer { rotationZ = rotation },
                         )
                     }
                 }

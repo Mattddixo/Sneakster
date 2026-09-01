@@ -13,39 +13,19 @@ import androidx.compose.ui.graphics.lerp
 import com.mattdixon.snake.engine.GameState
 import com.mattdixon.snake.engine.Obstacle
 import com.mattdixon.snake.engine.PowerUp
-import com.mattdixon.snake.engine.PowerUpType
 import com.mattdixon.snake.engine.Vec2
 import com.mattdixon.snake.ui.theme.AccentPrimary
 import com.mattdixon.snake.ui.theme.ArenaBackground
 import com.mattdixon.snake.ui.theme.ArenaGrid
 import com.mattdixon.snake.ui.theme.ObstacleColor
 import com.mattdixon.snake.ui.theme.ObstacleWarning
-import com.mattdixon.snake.ui.theme.PowerUpDiamondRotate
-import com.mattdixon.snake.ui.theme.PowerUpSharedGift
-import com.mattdixon.snake.ui.theme.PowerUpSharedPrank
-import com.mattdixon.snake.ui.theme.PowerUpSlowDown
-import com.mattdixon.snake.ui.theme.PowerUpSlowMotion
-import com.mattdixon.snake.ui.theme.PowerUpSpawnObstacle
-import com.mattdixon.snake.ui.theme.PowerUpSpeedUp
 import com.mattdixon.snake.ui.theme.SnakeHead
 import com.mattdixon.snake.ui.theme.SnakeTailFar
-import com.mattdixon.snake.ui.theme.TokenColor
 import kotlin.math.sin
 
 private fun Vec2.toOffset() = Offset(x, y)
 
 private fun lerpFloat(start: Float, stop: Float, fraction: Float): Float = start + (stop - start) * fraction
-
-private fun powerUpColor(type: PowerUpType): Color = when (type) {
-    PowerUpType.SPEED_UP -> PowerUpSpeedUp
-    PowerUpType.SLOW_DOWN -> PowerUpSlowDown
-    PowerUpType.SLOW_MOTION -> PowerUpSlowMotion
-    PowerUpType.SPAWN_OBSTACLE -> PowerUpSpawnObstacle
-    PowerUpType.DIAMOND_ROTATE -> PowerUpDiamondRotate
-    PowerUpType.TOKEN -> TokenColor
-    PowerUpType.SHARED_GIFT -> PowerUpSharedGift
-    PowerUpType.SHARED_PRANK -> PowerUpSharedPrank
-}
 
 /**
  * [arenaWidth]/[arenaHeight] are the same "game unit" numbers passed to [GameConfig] — not raw
@@ -55,7 +35,7 @@ private fun powerUpColor(type: PowerUpType): Color = when (type) {
  * genuinely a few dozen pixels on a 3x-density phone, i.e. a couple of millimeters).
  */
 @Composable
-fun GameCanvas(state: GameState, arenaWidth: Float, arenaHeight: Float, headRadius: Float = 9f, modifier: Modifier = Modifier) {
+fun GameCanvas(state: GameState, arenaWidth: Float, arenaHeight: Float, headRadius: Float = 7f, modifier: Modifier = Modifier) {
     Canvas(modifier = modifier.background(ArenaBackground)) {
         scale(scaleX = density, scaleY = density, pivot = Offset.Zero) {
             drawGrid(arenaWidth, arenaHeight)

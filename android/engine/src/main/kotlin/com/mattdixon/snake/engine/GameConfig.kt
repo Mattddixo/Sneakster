@@ -18,7 +18,7 @@ data class GameConfig(
     /** Multiplies [Difficulty]'s speed constants; 1.0 at [REFERENCE_ARENA_SIZE]. Lengths below
      * are already absolute — see [forArena] for why they don't need their own scale factor. */
     val scale: Float = 1f,
-    val headRadius: Float = 9f,
+    val headRadius: Float = 7f,
     val minBodyLength: Float = 55f,
     val maxBodyLength: Float = 600f,
     val bodyLengthPerSpeedUnit: Float = 2.2f,

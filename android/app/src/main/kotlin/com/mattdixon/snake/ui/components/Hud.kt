@@ -2,10 +2,14 @@ package com.mattdixon.snake.ui.components
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -17,12 +21,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.mattdixon.snake.engine.PowerUpType
-import com.mattdixon.snake.ui.theme.PowerUpDiamondRotate
-import com.mattdixon.snake.ui.theme.PowerUpSharedGift
-import com.mattdixon.snake.ui.theme.PowerUpSharedPrank
-import com.mattdixon.snake.ui.theme.PowerUpSlowDown
-import com.mattdixon.snake.ui.theme.PowerUpSlowMotion
-import com.mattdixon.snake.ui.theme.PowerUpSpeedUp
 import kotlin.math.roundToInt
 
 /** Timer up top and prominent; score (with active-effect badges and current speed) sits
@@ -66,24 +64,41 @@ fun GameHud(score: Int, speed: Float, activeEffects: Map<PowerUpType, Float>, el
 
 @Composable
 private fun RowScope.EffectBadge(type: PowerUpType) {
-    val (label, color) = when (type) {
-        PowerUpType.SPEED_UP -> "FAST" to PowerUpSpeedUp
-        PowerUpType.SLOW_DOWN -> "SLOW" to PowerUpSlowDown
-        PowerUpType.SLOW_MOTION -> "SLOMO" to PowerUpSlowMotion
-        PowerUpType.DIAMOND_ROTATE -> "SPIN" to PowerUpDiamondRotate
-        PowerUpType.SHARED_GIFT -> "GIFT" to PowerUpSharedGift
-        PowerUpType.SHARED_PRANK -> "PRANK" to PowerUpSharedPrank
-        PowerUpType.SPAWN_OBSTACLE, PowerUpType.TOKEN -> return
-    }
+    // SPAWN_OBSTACLE and TOKEN never sit in activeEffects (zero effect duration), so they never
+    // reach this badge - only the timed effects do.
+    if (type == PowerUpType.SPAWN_OBSTACLE || type == PowerUpType.TOKEN) return
     Text(
-        text = label,
+        text = powerUpLabel(type),
         color = Color.Black,
         fontSize = 11.sp,
         fontWeight = FontWeight.Bold,
         modifier = Modifier
-            .background(color, RoundedCornerShape(6.dp))
+            .background(powerUpColor(type), RoundedCornerShape(6.dp))
             .padding(horizontal = 8.dp, vertical = 3.dp),
     )
+}
+
+/** What each colored orb on the board means, laid out as two full-width rows (rather than a
+ * scrollable strip) so every entry is visible at a glance without needing to swipe mid-game. */
+@Composable
+fun PowerUpLegend(modifier: Modifier = Modifier) {
+    val types = PowerUpType.entries
+    val rows = types.chunked((types.size + 1) / 2)
+    Column(modifier = modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+        rows.forEach { rowTypes ->
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly) {
+                rowTypes.forEach { type -> LegendEntry(type) }
+            }
+        }
+    }
+}
+
+@Composable
+private fun LegendEntry(type: PowerUpType) {
+    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+        Box(Modifier.size(7.dp).background(powerUpColor(type), CircleShape))
+        Text(text = powerUpLabel(type), color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 9.sp)
+    }
 }
 
 fun Float.formatSeconds(): String {
