@@ -12,7 +12,8 @@
         android:label="@string/app_name"
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
-        android:theme="@style/Theme.Sneakster">
+        android:theme="@style/Theme.Sneakster"
+        android:usesCleartextTraffic="true"> <!-- backend is plain HTTP over Tailscale, no TLS -->
 
         <activity
             android:name=".MainActivity"
