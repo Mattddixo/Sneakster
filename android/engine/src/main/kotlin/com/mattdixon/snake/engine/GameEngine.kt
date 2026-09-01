@@ -1,6 +1,7 @@
 package com.mattdixon.snake.engine
 
 import kotlin.math.PI
+import kotlin.math.min
 import kotlin.random.Random
 
 /**
@@ -13,17 +14,34 @@ class GameEngine(
     private val config: GameConfig,
     private val random: Random = Random.Default,
 ) {
-    // These two numbers are what make a wall bounce survivable at an angle: neckClearance is
-    // how far into its own tail the head ignores entirely (skipping past the thick, near-head
-    // section of the trail), and bodyCollisionRadius is how thick a hit actually needs to be
-    // once we start checking. For two straight paths meeting at a vertex (the bounce point) at
-    // angle 2*delta apart, the worst-case separation between them within the checked region
-    // works out to neckClearance * tan(delta) - so neckClearance needs real headroom over
-    // bodyCollisionRadius for a "slight angle" (a handful of degrees) to actually clear. A
-    // truly dead-on bounce (delta = 0) never separates at all - distance stays ~0 - so it still
-    // collides regardless of how these are tuned.
+    // The hit test itself: how close the head's center needs to get to a tail point's center to
+    // count as touching it. This mirrors the obstacle check below (headRadius + the other
+    // thing's radius) - self-collision was missing the "+ headRadius" term entirely, which made
+    // the real hit box a fraction of what's actually drawn on screen and made the tail feel
+    // untouchable during ordinary steering.
     private val bodyCollisionRadius = config.headRadius * 0.5f
-    private val neckClearance = config.headRadius * 10f
+    private val selfCollisionRadius = config.headRadius + bodyCollisionRadius
+
+    // neckClearance is how far into its own tail (by arc length back from the head) the
+    // collision check ignores entirely - without this, the head would immediately "collide"
+    // with the handful of points it laid down a few frames ago, since consecutive points are
+    // only a frame's travel apart. It also happens to be what makes a wall bounce survivable at
+    // a shallow enough angle: for two straight paths meeting at a vertex (the bounce point) at
+    // angle 2*delta apart, the worst-case separation between them at the edge of the checked
+    // region is neckClearance * tan(delta). A *bigger* neckClearance makes MORE angles survive,
+    // not fewer - a first attempt at this used headRadius * 10, which forgave almost any
+    // deviation past a couple of degrees, making a wall bounce nearly impossible to die from
+    // unless the approach was dead-on straight. This value is deliberately small: only a
+    // genuinely negligible residual heading (a stray frame of input right before release)
+    // should have a shot at surviving a bounce - anything a player would call "I turned"
+    // should still risk hitting its own tail, since the tail sits tight behind the head.
+    // A truly dead-on bounce (delta = 0) never separates at all, so it still collides
+    // regardless of how this is tuned.
+    private val neckClearanceBase = config.headRadius * 3f
+    // ...and capped to a fraction of the CURRENT tail length, not just a flat constant: a flat
+    // clearance bigger than the tail itself would exempt the whole trail from checking, making
+    // self-collision literally impossible whenever the tail is short (e.g. early in a run).
+    private val neckClearanceBodyFraction = 0.6f
     private val headSpawnClearance = config.headRadius * 4f
     private val survivalPointsPerSecondPerSpeedUnit = 0.15f
 
@@ -156,11 +174,12 @@ class GameEngine(
     }
 
     private fun checkSelfCollision(events: MutableList<GameEvent>) {
+        val neckClearance = min(neckClearanceBase, bodyLength * neckClearanceBodyFraction)
         var accumulated = 0f
         for (i in 1 until path.size) {
             accumulated += path[i - 1].distanceTo(path[i])
             if (accumulated < neckClearance) continue
-            if (head.distanceTo(path[i]) < bodyCollisionRadius) {
+            if (head.distanceTo(path[i]) < selfCollisionRadius) {
                 endRound(GameOverReason.SELF_COLLISION, events)
                 return
             }

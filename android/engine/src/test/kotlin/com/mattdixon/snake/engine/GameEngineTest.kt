@@ -90,12 +90,13 @@ class GameEngineTest {
     }
 
     @Test
-    fun `bouncing off a wall at a slight angle avoids the tail with no turn input held`() {
+    fun `bouncing off a wall after only a brief nudge still hits the tail`() {
         // A brief nudge before release puts the approach a few degrees off dead-on (about 7-8
         // degrees at NORMAL's turn rate), then the player lets go entirely: no turn input is
-        // held during the approach, the bounce, or the retrace. Purely on geometry - the wider
-        // neckClearance gives real separation room to build before any collision check even
-        // starts - this angled bounce should clear its own tail, unlike the dead-on case above.
+        // held during the approach, the bounce, or the retrace. The tail sits tight behind the
+        // head, so this small a deviation shouldn't be enough to escape it - only a genuinely
+        // negligible residual heading (a stray single frame of input) gets any forgiveness at
+        // all. See the `deliberate` test below for a turn that's actually big enough to clear.
         val config = GameConfig(
             arenaWidth = 2000f,
             arenaHeight = 300f,
@@ -107,6 +108,33 @@ class GameEngineTest {
         repeat(3) { engine.update(FIXED_DT) }
         engine.setTurnInput(TurnInput.NONE)
 
+        var reason: GameOverReason? = null
+        for (frame in 0 until 200) {
+            val state = engine.update(FIXED_DT)
+            (state.status as? GameStatus.GameOver)?.let { reason = it.reason }
+            if (reason != null) break
+        }
+
+        assertEquals(GameOverReason.SELF_COLLISION, reason, "a brief nudge isn't a real enough turn to dodge your own tail on a bounce")
+    }
+
+    @Test
+    fun `bouncing off a wall after a deliberate turn away clears the tail`() {
+        // Unlike the brief nudge above, this holds the turn long enough to point clearly away
+        // from a dead-on retrace (about 50 degrees at NORMAL's turn rate) before releasing -
+        // a real, intentional dodge rather than a stray frame of input. That should still be
+        // enough separation to survive the bounce.
+        val config = GameConfig(
+            arenaWidth = 2000f,
+            arenaHeight = 300f,
+            difficulty = Difficulty.NORMAL,
+            minBodyLength = 250f,
+        )
+        val engine = GameEngine(config, random = Random(1))
+        engine.setTurnInput(TurnInput.LEFT)
+        repeat(20) { engine.update(FIXED_DT) }
+        engine.setTurnInput(TurnInput.NONE)
+
         var framesSinceBounce = -1
         for (frame in 0 until 200) {
             val state = engine.update(FIXED_DT)
@@ -115,7 +143,7 @@ class GameEngineTest {
             } else {
                 framesSinceBounce++
                 if (framesSinceBounce > 40) break
-                assertEquals(GameStatus.Playing, state.status, "a slight-angle bounce with no input held should clear its own tail")
+                assertEquals(GameStatus.Playing, state.status, "a deliberate turn away from dead-on should clear the tail on the bounce")
             }
         }
 
@@ -192,9 +220,13 @@ class GameEngineTest {
 
     @Test
     fun `a token disappears on its own if not collected in time`() {
-        val engine = GameEngine(quietConfig(), random = Random(1))
+        // A big arena, not the usual 2000x2000 quietConfig default: this run goes on long enough
+        // (10 simulated seconds) that a smaller arena's walls would be reached with no turn input
+        // held, ending the round in a dead-on self-collision before the token's lifetime is even
+        // up. This is only about the timer, so give the snake room to never hit a wall at all.
+        val engine = GameEngine(quietConfig(arenaWidth = 20_000f, arenaHeight = 20_000f), random = Random(1))
         val head = engine.currentState().head
-        // Well outside the 2000x2000 arena, so the snake can never actually reach it - this
+        // Well outside the arena bounds anyway, so the snake can never actually reach it - this
         // test is only about the timer, not about collection.
         engine.debugPlacePowerUp(position = Vec2(head.x + 50_000f, head.y + 50_000f), type = PowerUpType.TOKEN)
 
