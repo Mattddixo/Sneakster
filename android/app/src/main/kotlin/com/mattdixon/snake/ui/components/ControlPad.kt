@@ -28,13 +28,14 @@ import androidx.compose.ui.unit.dp
 import com.mattdixon.snake.engine.TurnInput
 
 /**
- * Two big hold-to-turn buttons anchored at the bottom of the screen — the game's entire
- * control surface, on purpose (see the design brief: "simple controls at the bottom").
+ * Two big hold-to-turn buttons — the game's entire control surface, on purpose (see the
+ * design brief: "simple controls at the bottom"). Vertical placement/spacing is the caller's
+ * job (GameScreen lifts these up off the very bottom edge); this only handles the row itself.
  */
 @Composable
 fun ControlPad(onTurnInput: (TurnInput) -> Unit, modifier: Modifier = Modifier) {
     Row(
-        modifier = modifier.fillMaxWidth().padding(horizontal = 32.dp, vertical = 24.dp),
+        modifier = modifier.fillMaxWidth().padding(horizontal = 32.dp),
         horizontalArrangement = Arrangement.SpaceBetween,
     ) {
         TurnButton(TurnInput.LEFT, Icons.Filled.KeyboardArrowLeft, onTurnInput)

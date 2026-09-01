@@ -2,14 +2,15 @@ package com.mattdixon.snake.ui.components
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
@@ -21,33 +22,35 @@ import com.mattdixon.snake.ui.theme.PowerUpSlowMotion
 import com.mattdixon.snake.ui.theme.PowerUpSpeedUp
 import kotlin.math.roundToInt
 
+/** Timer up top and prominent; score (with active-effect badges and current speed) sits
+ * below it with a visible gap, rather than everything crammed onto one line at the very edge. */
 @Composable
 fun GameHud(score: Int, speed: Float, activeEffects: Map<PowerUpType, Float>, elapsedSeconds: Float, modifier: Modifier = Modifier) {
-    Row(
-        modifier = modifier.fillMaxWidth().padding(16.dp),
-        horizontalArrangement = Arrangement.SpaceBetween,
-    ) {
-        Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+    Column(modifier = modifier, horizontalAlignment = Alignment.CenterHorizontally) {
+        Text(
+            text = elapsedSeconds.formatSeconds(),
+            color = MaterialTheme.colorScheme.onBackground,
+            fontWeight = FontWeight.Bold,
+            fontSize = 34.sp,
+        )
+        Row(
+            modifier = Modifier.padding(top = 6.dp),
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
             Text(
                 text = "SCORE $score",
                 color = MaterialTheme.colorScheme.onBackground,
                 fontWeight = FontWeight.Bold,
-                fontSize = 20.sp,
+                fontSize = 18.sp,
             )
-            Text(
-                text = elapsedSeconds.formatSeconds(),
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                fontSize = 20.sp,
-            )
-        }
-        Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
             activeEffects.keys.forEach { EffectBadge(it) }
+            Text(
+                text = "%.0f u/s".format(speed),
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                fontSize = 14.sp,
+            )
         }
-        Text(
-            text = "%.0f u/s".format(speed),
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            fontSize = 16.sp,
-        )
     }
 }
 

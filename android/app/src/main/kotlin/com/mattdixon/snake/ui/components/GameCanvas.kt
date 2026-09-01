@@ -8,6 +8,7 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.DrawScope
+import androidx.compose.ui.graphics.drawscope.scale
 import androidx.compose.ui.graphics.lerp
 import com.mattdixon.snake.engine.GameState
 import com.mattdixon.snake.engine.Obstacle
@@ -37,25 +38,34 @@ private fun powerUpColor(type: PowerUpType): Color = when (type) {
     PowerUpType.SPAWN_OBSTACLE -> PowerUpSpawnObstacle
 }
 
+/**
+ * [arenaWidth]/[arenaHeight] are the same "game unit" numbers passed to [GameConfig] — not raw
+ * device pixels. Everything below is drawn in that game-unit coordinate space and scaled up to
+ * real pixels by density once, via [scale], instead of every shape being sized in physical
+ * pixels (which is what made the snake look tiny on high-density screens: a "9px" head is
+ * genuinely a few dozen pixels on a 3x-density phone, i.e. a couple of millimeters).
+ */
 @Composable
-fun GameCanvas(state: GameState, headRadius: Float = 9f, modifier: Modifier = Modifier) {
+fun GameCanvas(state: GameState, arenaWidth: Float, arenaHeight: Float, headRadius: Float = 9f, modifier: Modifier = Modifier) {
     Canvas(modifier = modifier.background(ArenaBackground)) {
-        drawGrid()
-        state.obstacles.forEach { drawObstacle(it, state.elapsedSeconds) }
-        state.powerUps.forEach { drawPowerUp(it, state.elapsedSeconds) }
-        drawSnake(state, headRadius)
+        scale(scaleX = density, scaleY = density, pivot = Offset.Zero) {
+            drawGrid(arenaWidth, arenaHeight)
+            state.obstacles.forEach { drawObstacle(it, state.elapsedSeconds) }
+            state.powerUps.forEach { drawPowerUp(it, state.elapsedSeconds) }
+            drawSnake(state, headRadius)
+        }
     }
 }
 
-private fun DrawScope.drawGrid(spacing: Float = 64f) {
+private fun DrawScope.drawGrid(arenaWidth: Float, arenaHeight: Float, spacing: Float = 40f) {
     var x = 0f
-    while (x < size.width) {
-        drawLine(ArenaGrid, Offset(x, 0f), Offset(x, size.height), strokeWidth = 1f)
+    while (x < arenaWidth) {
+        drawLine(ArenaGrid, Offset(x, 0f), Offset(x, arenaHeight), strokeWidth = 1f)
         x += spacing
     }
     var y = 0f
-    while (y < size.height) {
-        drawLine(ArenaGrid, Offset(0f, y), Offset(size.width, y), strokeWidth = 1f)
+    while (y < arenaHeight) {
+        drawLine(ArenaGrid, Offset(0f, y), Offset(arenaWidth, y), strokeWidth = 1f)
         y += spacing
     }
 }

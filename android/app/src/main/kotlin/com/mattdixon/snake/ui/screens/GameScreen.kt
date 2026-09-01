@@ -1,7 +1,15 @@
 package com.mattdixon.snake.ui.screens
 
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.safeDrawingPadding
+import androidx.compose.foundation.layout.weight
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
@@ -19,7 +27,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.hapticfeedback.HapticFeedback
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
@@ -50,6 +60,7 @@ fun GameScreen(onExitToMenu: () -> Unit) {
     )
     val uiState by viewModel.uiState.collectAsState()
     val haptics = LocalHapticFeedback.current
+    val density = LocalDensity.current
     val soundPlayer = remember { SoundPlayer() }
     DisposableEffect(Unit) { onDispose { soundPlayer.release() } }
 
@@ -61,55 +72,84 @@ fun GameScreen(onExitToMenu: () -> Unit) {
     val scope = rememberCoroutineScope()
     val latestSettings = rememberUpdatedState(settings)
 
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .onSizeChanged { size ->
-                if (!hasStarted && size.width > 0 && size.height > 0) {
-                    hasStarted = true
-                    viewModel.startNewRound(size.width.toFloat(), size.height.toFloat(), settings)
+    Box(modifier = Modifier.fillMaxSize()) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .safeDrawingPadding()
+                .padding(horizontal = 16.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+        ) {
+            Spacer(Modifier.height(12.dp))
+
+            val gameState = uiState.gameState
+            if (gameState != null) {
+                GameHud(
+                    score = gameState.score,
+                    speed = gameState.speed,
+                    activeEffects = gameState.activeEffects,
+                    elapsedSeconds = gameState.elapsedSeconds,
+                )
+            }
+
+            Spacer(Modifier.weight(1f))
+
+            // Square arena: a game field this shape reads far better than a screen-filling
+            // rectangle, and it's what makes the snake's actual size legible against the board.
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .aspectRatio(1f)
+                    .onSizeChanged { size ->
+                        if (!hasStarted && size.width > 0 && size.height > 0) {
+                            hasStarted = true
+                            val widthUnits = with(density) { size.width.toDp().value }
+                            val heightUnits = with(density) { size.height.toDp().value }
+                            viewModel.startNewRound(widthUnits, heightUnits, settings)
+                        }
+                    },
+            ) {
+                if (gameState == null) {
+                    Text("Loading arena…", modifier = Modifier.align(Alignment.Center))
+                } else {
+                    GameCanvas(
+                        state = gameState,
+                        arenaWidth = uiState.arenaWidth,
+                        arenaHeight = uiState.arenaHeight,
+                        modifier = Modifier.fillMaxSize(),
+                    )
                 }
-            },
-    ) {
-        val gameState = uiState.gameState
-        if (gameState == null) {
-            Text("Loading arena…", modifier = Modifier.align(Alignment.Center))
-            return@Box
-        }
+            }
 
-        GameCanvas(state = gameState, modifier = Modifier.fillMaxSize())
-        GameHud(
-            score = gameState.score,
-            speed = gameState.speed,
-            activeEffects = gameState.activeEffects,
-            elapsedSeconds = gameState.elapsedSeconds,
-            modifier = Modifier.align(Alignment.TopCenter),
-        )
+            Spacer(Modifier.weight(1f))
 
-        val status = gameState.status
-        if (status is GameStatus.Playing) {
-            ControlPad(onTurnInput = viewModel::setTurnInput, modifier = Modifier.align(Alignment.BottomCenter))
-        }
+            val status = gameState?.status
+            if (status is GameStatus.Playing) {
+                ControlPad(onTurnInput = viewModel::setTurnInput)
+            }
+            Spacer(Modifier.height(24.dp))
 
-        LaunchedEffect(hasStarted) {
-            if (!hasStarted) return@LaunchedEffect
-            var lastFrameNanos = -1L
-            while (isActive) {
-                withFrameNanos { frameNanos ->
-                    if (lastFrameNanos >= 0) {
-                        val dt = ((frameNanos - lastFrameNanos) / 1_000_000_000f).coerceAtMost(MAX_FRAME_DT_SECONDS)
-                        val newState = viewModel.tick(dt)
-                        newState?.events?.forEach { event -> handleEvent(event, latestSettings.value, soundPlayer, haptics, viewModel) }
+            LaunchedEffect(hasStarted) {
+                if (!hasStarted) return@LaunchedEffect
+                var lastFrameNanos = -1L
+                while (isActive) {
+                    withFrameNanos { frameNanos ->
+                        if (lastFrameNanos >= 0) {
+                            val dt = ((frameNanos - lastFrameNanos) / 1_000_000_000f).coerceAtMost(MAX_FRAME_DT_SECONDS)
+                            val newState = viewModel.tick(dt)
+                            newState?.events?.forEach { event -> handleEvent(event, latestSettings.value, soundPlayer, haptics, viewModel) }
+                        }
+                        lastFrameNanos = frameNanos
                     }
-                    lastFrameNanos = frameNanos
                 }
             }
         }
 
+        val status = uiState.gameState?.status
         if (status is GameStatus.GameOver) {
             GameOverSheet(
                 reason = status.reason,
-                score = gameState.score,
+                score = uiState.gameState?.score ?: 0,
                 bestScore = settings.bestScore,
                 nickname = nickname,
                 onNicknameChange = { nickname = it },
