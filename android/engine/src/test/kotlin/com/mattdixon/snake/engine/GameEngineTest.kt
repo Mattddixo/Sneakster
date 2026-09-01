@@ -66,6 +66,65 @@ class GameEngineTest {
     }
 
     @Test
+    fun `bouncing dead-on with no attempt to turn still kills you on your own tail`() {
+        // Default heading is straight up with no turn input held: a short, wide arena makes the
+        // first bounce an exact 180-degree reversal, so the head retraces its own tail with zero
+        // separation. That's a fair death — you drove straight into a wall and straight back into
+        // yourself without ever touching the controls.
+        val config = GameConfig(
+            arenaWidth = 2000f,
+            arenaHeight = 300f,
+            difficulty = Difficulty.NORMAL,
+            minBodyLength = 250f,
+        )
+        val engine = GameEngine(config, random = Random(1))
+
+        var reason: GameOverReason? = null
+        for (frame in 0 until 200) {
+            val state = engine.update(FIXED_DT)
+            (state.status as? GameStatus.GameOver)?.let { reason = it.reason }
+            if (reason != null) break
+        }
+
+        assertEquals(GameOverReason.SELF_COLLISION, reason)
+    }
+
+    @Test
+    fun `bouncing off a wall while actively steering does not instantly kill you on your own tail`() {
+        // Same straight, no-input approach as the dead-on test above (so the bounce itself is
+        // still a near-180-degree reflection), but the instant the wall bounce happens the
+        // player reacts and starts holding a turn — the realistic case of noticing the wall and
+        // steering away, rather than either holding a turn the whole time (which would just
+        // loop in tight circles and never reach the wall) or never touching the controls at all.
+        val config = GameConfig(
+            arenaWidth = 2000f,
+            arenaHeight = 300f,
+            difficulty = Difficulty.NORMAL,
+            minBodyLength = 250f,
+        )
+        val engine = GameEngine(config, random = Random(1))
+
+        var framesSinceBounce = -1
+        for (frame in 0 until 200) {
+            val state = engine.update(FIXED_DT)
+            if (framesSinceBounce < 0) {
+                if (state.events.contains(GameEvent.WallBounced)) {
+                    framesSinceBounce = 0
+                    engine.setTurnInput(TurnInput.LEFT)
+                }
+            } else {
+                framesSinceBounce++
+                // Grace period is 0.5s (30 frames at 60fps); stay safely inside that window,
+                // then stop — what happens after grace lapses isn't this test's concern.
+                if (framesSinceBounce > 25) break
+                assertEquals(GameStatus.Playing, state.status, "should not die from the wall it just bounced off of while steering away")
+            }
+        }
+
+        assertTrue(framesSinceBounce >= 0, "expected a wall bounce within the simulated window")
+    }
+
+    @Test
     fun `running into an obstacle ends the round`() {
         val engine = GameEngine(quietConfig(), random = Random(1))
         val head = engine.currentState().head

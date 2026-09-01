@@ -16,6 +16,7 @@ class GameEngine(
     private val bodyCollisionRadius = config.headRadius * 1.6f
     private val neckClearance = config.headRadius * 3f
     private val survivalPointsPerSecondPerSpeedUnit = 0.15f
+    private val selfCollisionGraceSeconds = 0.5f
 
     private var head = Vec2(config.arenaWidth / 2f, config.arenaHeight / 2f)
     private var heading = -PI.toFloat() / 2f
@@ -32,6 +33,7 @@ class GameEngine(
     private var status: GameStatus = GameStatus.Playing
     private var turnInput = TurnInput.NONE
     private var nextId = 1L
+    private var bounceGraceDeadline = 0f
 
     private var nextPowerUpSpawnAt = randomIn(config.difficulty.powerUpSpawnPeriodSeconds)
     private var nextObstacleSpawnAt = randomIn(config.difficulty.obstacleSpawnPeriodSeconds)
@@ -115,7 +117,16 @@ class GameEngine(
         }
 
         head = next
-        if (bounced) events.add(GameEvent.WallBounced)
+        if (bounced) {
+            events.add(GameEvent.WallBounced)
+            // A dead-on, no-input bounce sending the head straight back over its own tail is a
+            // fair death. But the same near-180-degree reflection also happens when the player
+            // was already turning away — there, a genuine few-degree deviation should be enough
+            // to eventually clear the tail, except the collision radius is tight enough that it
+            // reads as an instant, unavoidable hit before that separation has time to build. So
+            // the grace window only opens while the player is actively holding a turn.
+            bounceGraceDeadline = elapsedSeconds + selfCollisionGraceSeconds
+        }
     }
 
     private fun updateBody() {
@@ -133,6 +144,8 @@ class GameEngine(
     }
 
     private fun checkSelfCollision(events: MutableList<GameEvent>) {
+        val activelySteering = turnInput != TurnInput.NONE
+        if (activelySteering && elapsedSeconds < bounceGraceDeadline) return
         var accumulated = 0f
         for (i in 1 until path.size) {
             accumulated += path[i - 1].distanceTo(path[i])
