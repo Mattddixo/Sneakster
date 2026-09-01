@@ -4,7 +4,6 @@ import com.mattdixon.snakeapi.db.LeaderboardRepository
 import com.mattdixon.snakeapi.db.Scores
 import com.mattdixon.snakeapi.model.ScoreSubmission
 import kotlinx.coroutines.test.runTest
-import org.jetbrains.exposed.sql.Database
 import org.jetbrains.exposed.sql.SchemaUtils
 import org.jetbrains.exposed.sql.transactions.transaction
 import kotlin.test.BeforeTest
@@ -14,13 +13,10 @@ import kotlin.test.assertTrue
 
 class LeaderboardRepositoryTest {
 
-    // Connected once for the whole class: Exposed pins a TransactionManager to the JUnit
-    // executor thread on first use, so reconnecting to a new database per test silently
-    // leaves later transactions on that thread still targeting the first connection.
-    companion object {
-        init {
-            Database.connect("jdbc:h2:mem:leaderboard-repository-test;DB_CLOSE_DELAY=-1", driver = "org.h2.Driver")
-        }
+    // See TestDatabase for why every repository test class shares one H2 database rather than
+    // connecting to its own.
+    init {
+        TestDatabase.ensureConnected()
     }
 
     @BeforeTest

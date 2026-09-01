@@ -45,12 +45,23 @@ class GameEngine(
 
     private var nextPowerUpSpawnAt = randomIn(config.difficulty.powerUpSpawnPeriodSeconds)
     private var nextObstacleSpawnAt = randomIn(config.difficulty.obstacleSpawnPeriodSeconds)
+    private var nextTokenSpawnAt = randomIn(config.tokenSpawnPeriodSeconds)
 
     fun setTurnInput(input: TurnInput) {
         turnInput = input
     }
 
     fun currentState(): GameState = snapshot(emptyList())
+
+    /** Places [type] on the board right now if there's room, regardless of its normal spawn
+     * cycle — used for a shared-pool pull, which needs to appear at a specific moment chosen
+     * by the caller rather than whenever the random timer would have fired. Returns false if
+     * no valid spot could be found (the caller can just try again shortly after). */
+    fun placeSpecificPowerUp(type: PowerUpType): Boolean {
+        val position = findSpawnPosition(config.powerUpRadius) ?: return false
+        powerUps.add(PowerUp(id = nextId++, position = position, type = type, radius = config.powerUpRadius, spawnedAt = elapsedSeconds))
+        return true
+    }
 
     /** Test-only hook: places an obstacle at an exact spot instead of a random one. */
     internal fun debugPlaceObstacle(position: Vec2, radius: Float = config.obstacleRadius, expiresInSeconds: Float = 30f) {
@@ -59,7 +70,7 @@ class GameEngine(
 
     /** Test-only hook: places a power-up at an exact spot instead of a random one. */
     internal fun debugPlacePowerUp(position: Vec2, type: PowerUpType) {
-        powerUps.add(PowerUp(id = nextId++, position = position, type = type, radius = config.powerUpRadius))
+        powerUps.add(PowerUp(id = nextId++, position = position, type = type, radius = config.powerUpRadius, spawnedAt = elapsedSeconds))
     }
 
     fun update(dtSeconds: Float): GameState {
@@ -79,6 +90,7 @@ class GameEngine(
         checkSelfCollision(events)
         checkObstacleCollisions(events)
         expireObstacles()
+        expirePowerUps()
         checkPowerUpPickups(events)
         maybeSpawnEntities()
         scoreAccumulator += dt * speed * survivalPointsPerSecondPerSpeedUnit
@@ -90,6 +102,7 @@ class GameEngine(
         var multiplier = 1f
         if (isEffectActive(PowerUpType.SPEED_UP)) multiplier *= 1.5f
         if (isEffectActive(PowerUpType.SLOW_DOWN)) multiplier *= 0.55f
+        if (isEffectActive(PowerUpType.SHARED_GIFT)) multiplier *= 1.4f
         return config.difficulty.baseSpeedAt(elapsedSeconds) * config.scale * multiplier
     }
 
@@ -168,6 +181,13 @@ class GameEngine(
         obstacles.removeAll { it.expiresAt <= elapsedSeconds }
     }
 
+    private fun expirePowerUps() {
+        powerUps.removeAll { powerUp ->
+            val lifetime = powerUp.type.lifetimeSeconds ?: return@removeAll false
+            elapsedSeconds - powerUp.spawnedAt > lifetime
+        }
+    }
+
     private fun checkPowerUpPickups(events: MutableList<GameEvent>) {
         val collected = powerUps.filter { head.distanceTo(it.position) < config.headRadius + it.radius }
         if (collected.isEmpty()) return
@@ -177,7 +197,7 @@ class GameEngine(
             if (powerUp.type.effectDurationSeconds > 0f) {
                 activeEffects[powerUp.type] = elapsedSeconds + powerUp.type.effectDurationSeconds
             }
-            if (powerUp.type == PowerUpType.SPAWN_OBSTACLE) {
+            if (powerUp.type == PowerUpType.SPAWN_OBSTACLE || powerUp.type == PowerUpType.SHARED_PRANK) {
                 repeat(if (random.nextBoolean()) 2 else 1) { spawnObstacle() }
             }
             events.add(GameEvent.PowerUpCollected(powerUp.type))
@@ -186,7 +206,7 @@ class GameEngine(
     }
 
     private fun maybeSpawnEntities() {
-        if (elapsedSeconds >= nextPowerUpSpawnAt && powerUps.size < config.maxConcurrentPowerUps) {
+        if (elapsedSeconds >= nextPowerUpSpawnAt && regularPowerUpCount() < config.maxConcurrentPowerUps) {
             spawnPowerUp()
             nextPowerUpSpawnAt = elapsedSeconds + randomIn(config.difficulty.powerUpSpawnPeriodSeconds)
         }
@@ -194,11 +214,25 @@ class GameEngine(
             spawnObstacle()
             nextObstacleSpawnAt = elapsedSeconds + randomIn(config.difficulty.obstacleSpawnPeriodSeconds)
         }
+        if (elapsedSeconds >= nextTokenSpawnAt && tokenCount() < config.maxConcurrentTokens) {
+            spawnToken()
+            nextTokenSpawnAt = elapsedSeconds + randomIn(config.tokenSpawnPeriodSeconds)
+        }
     }
+
+    private fun regularPowerUpCount(): Int = powerUps.count { !it.type.poolExclusive && it.type != PowerUpType.TOKEN }
+
+    private fun tokenCount(): Int = powerUps.count { it.type == PowerUpType.TOKEN }
 
     private fun spawnPowerUp() {
         val position = findSpawnPosition(config.powerUpRadius) ?: return
-        powerUps.add(PowerUp(id = nextId++, position = position, type = PowerUpType.entries.random(random), radius = config.powerUpRadius))
+        val type = PowerUpType.entries.filter { !it.poolExclusive && it != PowerUpType.TOKEN }.random(random)
+        powerUps.add(PowerUp(id = nextId++, position = position, type = type, radius = config.powerUpRadius, spawnedAt = elapsedSeconds))
+    }
+
+    private fun spawnToken() {
+        val position = findSpawnPosition(config.tokenRadius) ?: return
+        powerUps.add(PowerUp(id = nextId++, position = position, type = PowerUpType.TOKEN, radius = config.tokenRadius, spawnedAt = elapsedSeconds))
     }
 
     private fun spawnObstacle() {

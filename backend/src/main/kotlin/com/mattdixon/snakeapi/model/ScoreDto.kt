@@ -28,7 +28,7 @@ data class ScoreSubmissionResult(
 @Serializable
 data class ApiError(val error: String)
 
-private val NICKNAME_PATTERN = Regex("^[A-Za-z0-9 _-]{1,20}$")
+internal val NICKNAME_PATTERN = Regex("^[A-Za-z0-9 _-]{1,20}$")
 private val VALID_DIFFICULTIES = setOf("easy", "normal", "hard")
 private const val MAX_PLAUSIBLE_SCORE = 1_000_000
 

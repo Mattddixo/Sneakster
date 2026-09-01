@@ -27,6 +27,9 @@ data class GameConfig(
     val powerUpRadius: Float = 11f,
     val maxConcurrentPowerUps: Int = 2,
     val maxConcurrentObstacles: Int = 4,
+    val tokenRadius: Float = 9f,
+    val tokenSpawnPeriodSeconds: ClosedFloatingPointRange<Float> = 12f..20f,
+    val maxConcurrentTokens: Int = 1,
 ) {
     init {
         require(arenaWidth > 0f && arenaHeight > 0f) { "Arena must have positive dimensions" }
@@ -65,6 +68,7 @@ data class GameConfig(
                 maxBodyLength = reference.maxBodyLength * k,
                 obstacleRadius = reference.obstacleRadius * k,
                 powerUpRadius = reference.powerUpRadius * k,
+                tokenRadius = reference.tokenRadius * k,
                 // bodyLengthPerSpeedUnit intentionally left unscaled: it converts a speed excess
                 // (which itself scales by k) into a length, so the length contribution already
                 // scales by k without this needing to change too.

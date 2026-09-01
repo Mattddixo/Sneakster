@@ -189,4 +189,43 @@ class GameEngineTest {
         repeat(120) { engine.update(FIXED_DT) }
         assertTrue(engine.currentState().score > 0)
     }
+
+    @Test
+    fun `a token disappears on its own if not collected in time`() {
+        val engine = GameEngine(quietConfig(), random = Random(1))
+        val head = engine.currentState().head
+        // Well outside the 2000x2000 arena, so the snake can never actually reach it - this
+        // test is only about the timer, not about collection.
+        engine.debugPlacePowerUp(position = Vec2(head.x + 50_000f, head.y + 50_000f), type = PowerUpType.TOKEN)
+
+        val justPlaced = engine.update(FIXED_DT)
+        assertTrue(justPlaced.powerUps.any { it.type == PowerUpType.TOKEN }, "token should be present right after spawning")
+
+        repeat(600) { engine.update(FIXED_DT) } // 10 more simulated seconds, past TOKEN's 9s lifetime
+
+        assertTrue(engine.currentState().powerUps.none { it.type == PowerUpType.TOKEN }, "token should have expired by now")
+    }
+
+    @Test
+    fun `placeSpecificPowerUp puts a pool-pulled effect on the board immediately`() {
+        val engine = GameEngine(quietConfig(), random = Random(1))
+
+        val placed = engine.placeSpecificPowerUp(PowerUpType.SHARED_GIFT)
+
+        assertTrue(placed, "expected a valid spawn spot in an empty 2000x2000 arena")
+        assertEquals(1, engine.currentState().powerUps.count { it.type == PowerUpType.SHARED_GIFT })
+    }
+
+    @Test
+    fun `pool-exclusive effects never appear through the normal random spawn cycle`() {
+        val engine = GameEngine(quietConfig(), random = Random(1))
+
+        val seenTypes = mutableSetOf<PowerUpType>()
+        repeat(3600) { // 60 simulated seconds: several full power-up spawn cycles
+            seenTypes += engine.update(FIXED_DT).powerUps.map { it.type }
+        }
+
+        assertTrue(PowerUpType.SHARED_GIFT !in seenTypes, "SHARED_GIFT should only ever appear via placeSpecificPowerUp")
+        assertTrue(PowerUpType.SHARED_PRANK !in seenTypes, "SHARED_PRANK should only ever appear via placeSpecificPowerUp")
+    }
 }

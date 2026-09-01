@@ -17,7 +17,7 @@ object DatabaseFactory {
         val dataSource = createDataSource(config)
         Database.connect(dataSource)
         transaction {
-            SchemaUtils.createMissingTablesAndColumns(Scores)
+            SchemaUtils.createMissingTablesAndColumns(Scores, PoolContributions)
         }
     }
 
