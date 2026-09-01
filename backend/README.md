@@ -1,7 +1,8 @@
 # Sneakster backend
 
-A small Ktor service that stores and serves the leaderboard. No accounts —
-a score submission is just a nickname, a score, and a difficulty.
+A small Ktor service that stores and serves the leaderboard, plus a shared
+effects pool players can leave gifts (or mischief) in for each other. No
+accounts — a score submission is just a nickname, a score, and a difficulty.
 
 ## Stack
 
@@ -16,10 +17,20 @@ a score submission is just a nickname, a score, and a difficulty.
 | GET    | `/health`            | —                                          | used by the Docker healthcheck |
 | GET    | `/api/v1/leaderboard`| `?limit=20&difficulty=easy\|normal\|hard`  | top scores, highest first |
 | POST   | `/api/v1/scores`     | `{"nickname","score","difficulty"}`        | rate-limited to 10/min per IP |
+| POST   | `/api/v1/pool/contribute` | `{"nickname","effectType"}`           | adds one pending effect to the shared pool; rate-limited to 20/min per IP |
+| POST   | `/api/v1/pool/pull`  | —                                          | pops one random pending effect (204 if the pool is empty); same rate limit |
 
 Nicknames are 1–20 characters (letters, numbers, space, `-`, `_`); scores are
 capped at a plausible maximum server-side. This is basic sanity-checking,
 not real anti-cheat — treat the leaderboard as casual, not competitive.
+
+`effectType` must be one of `SHARED_GIFT` or `SHARED_PRANK` (kept in sync
+with the Android app's pool-exclusive `PowerUpType` entries — see
+`model/PoolDto.kt`). The server doesn't track token balances at all; the
+client spends its own locally-persisted tokens before calling contribute,
+same trust model as the rest of this casual, no-auth backend. A pull is
+consumed the instant it's handed out, so it can never be given to two
+different players.
 
 ## Configuration
 

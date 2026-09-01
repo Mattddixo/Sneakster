@@ -17,7 +17,7 @@ Requires Android Studio (or the command-line SDK) with **compileSdk 34**
 installed, and a JDK 17+. This wasn't built or run against a device or
 emulator while writing it — the sandbox this was developed in has no
 Android SDK, only a plain JDK, so only `:engine`'s pure-Kotlin logic could
-actually be compiled and tested here (`./gradlew :engine:test` — 9/9
+actually be compiled and tested here (`./gradlew :engine:test` — 17/17
 passing). The `app` module's Compose code was written and reviewed
 carefully, but treat first-build teething issues (a missing SDK component,
 a dependency version bump) as more likely here than in `engine`.
@@ -43,10 +43,11 @@ per-install via DataStore, independent of this build-time default.)
 - **No DI framework.** `AppContainer` (in `app/src/main/kotlin/.../di/`) is
   a handful of manually-constructed singletons — Hilt/Koin would be pure
   overhead for an app this size.
-- **No shared Gradle module with the backend.** The three DTOs
-  (`ScoreSubmission`, `LeaderboardEntry`, `ScoreSubmissionResult`) are
-  duplicated in `app/src/main/kotlin/.../data/LeaderboardModels.kt` rather
-  than wiring up a composite build for three data classes.
+- **No shared Gradle module with the backend.** The leaderboard DTOs
+  (`ScoreSubmission`, `LeaderboardEntry`, `ScoreSubmissionResult`) and pool
+  DTOs (`PoolContributionRequest`, `PulledEffect`) are duplicated in
+  `app/src/main/kotlin/.../data/LeaderboardModels.kt` and `PoolModels.kt`
+  rather than wiring up a composite build for a handful of data classes.
 - **Ktor Client**, not Retrofit, for networking — it mirrors the backend's
   own stack (same serialization setup, same mental model) and needs no
   separate converter library.

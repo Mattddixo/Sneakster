@@ -21,13 +21,24 @@ feeling the same twice. Scores go to a small self-hosted leaderboard.
 - The snake's tail is longer at higher speed. Touching your own tail ends
   the run.
 - Glowing circles are optional pickups: speed up, slow down, a few seconds
-  of slow motion, or — the risky one — dropping fresh obstacles onto the
-  field in exchange for bonus points.
+  of slow motion, dropping fresh obstacles onto the field in exchange for
+  bonus points, or a rare one that rotates the whole arena 45° into a
+  diamond for a while.
 - Obstacles disappear after several seconds (flashing a countdown ring as
   they run out); running into one ends the run just like your own tail does.
 - Everything in a match is configurable ahead of time from Settings:
   difficulty, turn sensitivity, sound, haptics, and the leaderboard
   server's address.
+
+## Tokens and the shared effects pool
+
+Small token pickups appear on the board too. Tokens are spent from the Shop
+screen to leave a gift (or a prank) in a pool shared across everyone playing
+against that backend — not for yourself. Each round, sometime in its first
+two minutes, the game pulls one pending effect from that pool (if there is
+one) and drops it into your match. It's a way for players to leave each
+other something without ever knowing who it came from. See
+`backend/README.md` for the pool's API and trust model.
 
 ## Repo layout and why it's split this way
 
