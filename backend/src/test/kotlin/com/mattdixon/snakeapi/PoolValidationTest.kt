@@ -39,6 +39,13 @@ class PoolValidationTest {
     }
 
     @Test
+    fun `rejects a nickname containing a blocked word`() {
+        assertFailsWith<ValidationException> {
+            PoolContributionRequest(nickname = "shitlord", effectType = "SHARED_PRANK", deviceId = VALID_DEVICE_ID).validated()
+        }
+    }
+
+    @Test
     fun `normalizes a device id to lowercase`() {
         val result = PoolContributionRequest(nickname = "player", effectType = "SHARED_PRANK", deviceId = VALID_DEVICE_ID.uppercase()).validated()
         assertEquals(VALID_DEVICE_ID, result.deviceId)

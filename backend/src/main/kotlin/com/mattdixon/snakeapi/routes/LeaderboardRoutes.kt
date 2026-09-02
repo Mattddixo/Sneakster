@@ -1,9 +1,11 @@
 package com.mattdixon.snakeapi.routes
 
+import com.mattdixon.snakeapi.db.DatabaseFactory
 import com.mattdixon.snakeapi.db.LeaderboardRepository
 import com.mattdixon.snakeapi.model.ScoreSubmission
 import com.mattdixon.snakeapi.model.ScoreSubmissionResult
 import com.mattdixon.snakeapi.model.validated
+import com.mattdixon.snakeapi.plugins.LeaderboardReadRateLimit
 import com.mattdixon.snakeapi.plugins.ScoreSubmissionRateLimit
 import io.ktor.http.HttpStatusCode
 import io.ktor.server.application.call
@@ -17,11 +19,13 @@ import io.ktor.server.routing.route
 
 fun Route.leaderboardRoutes() {
     route("/api/v1") {
-        get("/leaderboard") {
-            val limit = call.request.queryParameters["limit"]?.toIntOrNull()?.coerceIn(1, 100) ?: 20
-            val difficulty = call.request.queryParameters["difficulty"]?.lowercase()
-                ?.takeIf { it in setOf("easy", "normal", "hard") }
-            call.respond(LeaderboardRepository.top(limit, difficulty))
+        rateLimit(LeaderboardReadRateLimit) {
+            get("/leaderboard") {
+                val limit = call.request.queryParameters["limit"]?.toIntOrNull()?.coerceIn(1, 100) ?: 20
+                val difficulty = call.request.queryParameters["difficulty"]?.lowercase()
+                    ?.takeIf { it in setOf("easy", "normal", "hard") }
+                call.respond(LeaderboardRepository.top(limit, difficulty))
+            }
         }
 
         rateLimit(ScoreSubmissionRateLimit) {
@@ -42,6 +46,10 @@ fun Route.leaderboardRoutes() {
     }
 
     get("/health") {
-        call.respond(HttpStatusCode.OK, mapOf("status" to "ok"))
+        if (DatabaseFactory.isHealthy()) {
+            call.respond(HttpStatusCode.OK, mapOf("status" to "ok"))
+        } else {
+            call.respond(HttpStatusCode.ServiceUnavailable, mapOf("status" to "database unreachable"))
+        }
     }
 }

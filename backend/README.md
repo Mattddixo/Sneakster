@@ -14,15 +14,18 @@ accounts — a score submission is just a nickname, a score, and a difficulty.
 
 | Method | Path                 | Body / query                              | Notes |
 |--------|----------------------|--------------------------------------------|-------|
-| GET    | `/health`            | —                                          | used by the Docker healthcheck |
-| GET    | `/api/v1/leaderboard`| `?limit=20&difficulty=easy\|normal\|hard`  | top scores, highest first |
+| GET    | `/health`            | —                                          | `200` if the database is reachable, `503` otherwise; used by the Docker healthcheck |
+| GET    | `/api/v1/leaderboard`| `?limit=20&difficulty=easy\|normal\|hard`  | top scores, highest first; rate-limited to 60/min per IP |
 | POST   | `/api/v1/scores`     | `{"nickname","score","difficulty"}`        | rate-limited to 10/min per IP |
 | POST   | `/api/v1/pool/contribute` | `{"nickname","effectType","deviceId"}`| adds one pending effect to the shared pool; rate-limited to 20/min per IP, plus a per-device cap below |
 | POST   | `/api/v1/pool/pull`  | —                                          | pops one random pending effect (204 if the pool is empty); same rate limit |
 
-Nicknames are 1–20 characters (letters, numbers, space, `-`, `_`); scores are
-capped at a plausible maximum server-side. This is basic sanity-checking,
-not real anti-cheat — treat the leaderboard as casual, not competitive.
+Nicknames are 1–20 characters (letters, numbers, space, `-`, `_`) and are
+checked against a small, non-exhaustive blocked-word list (see
+`model/Moderation.kt`) — a first line of defense now that nicknames are
+shown publicly, not real moderation. Scores are capped at a plausible
+maximum server-side. This is basic sanity-checking, not real anti-cheat —
+treat the leaderboard as casual, not competitive.
 
 `effectType` must be one of `SHARED_GIFT`, `SHARED_PRANK`, `SHARED_SHIELD`,
 or `SHARED_FOG` (kept in sync with the Android app's pool-exclusive
@@ -51,7 +54,7 @@ Everything is environment-variable driven (see `src/main/resources/application.c
 | `PORT`                | `8080`                                        |
 | `DATABASE_JDBC_URL`   | `jdbc:postgresql://localhost:5432/sneakster`  |
 | `DATABASE_USER`       | `sneakster`                                   |
-| `DATABASE_PASSWORD`   | `sneakster`                                   |
+| `DATABASE_PASSWORD`   | `sneakster` — a known, weak dev default; the server logs a warning at startup if it's still in use |
 | `ALLOWED_ORIGINS`     | empty (allows any origin — fine for a phone-only client with no browser Origin header) |
 
 ## Running locally

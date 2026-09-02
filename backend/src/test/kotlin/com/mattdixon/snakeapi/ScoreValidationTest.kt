@@ -31,6 +31,13 @@ class ScoreValidationTest {
     }
 
     @Test
+    fun `rejects a nickname containing a blocked word`() {
+        assertFailsWith<ValidationException> {
+            ScoreSubmission(nickname = "shitlord", score = 10).validated()
+        }
+    }
+
+    @Test
     fun `rejects negative score`() {
         assertFailsWith<ValidationException> {
             ScoreSubmission(nickname = "player", score = -1).validated()

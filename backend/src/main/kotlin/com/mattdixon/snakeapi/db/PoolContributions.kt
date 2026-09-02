@@ -16,4 +16,10 @@ object PoolContributions : LongIdTable("pool_contributions") {
      * Not an account: nothing else is ever looked up by it, and no login is required. */
     val deviceId = varchar("device_id", 36)
     val createdAt = timestamp("created_at")
+
+    init {
+        // Backs PoolRepository.contribute()'s per-device rate-limit check (WHERE device_id = ?
+        // AND created_at > ?), run on every single contribution attempt.
+        index(false, deviceId, createdAt)
+    }
 }

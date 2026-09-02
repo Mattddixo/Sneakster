@@ -96,3 +96,10 @@ restrict the published port to the tailnet interface only.
 See `android/README.md` — you'll need Android Studio (or the command-line
 SDK) with API 34 installed, since this environment doesn't have the Android
 SDK available to build or run it.
+
+## License and privacy
+
+Sneakster is MIT-licensed — see `LICENSE`. See `PRIVACY.md` for exactly
+what data the app and backend collect (a nickname, a per-install device ID,
+and IP addresses used transiently for rate-limiting — no accounts, no
+analytics, no third-party tracking).

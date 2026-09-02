@@ -39,6 +39,9 @@ fun ScoreSubmission.validated(): ScoreSubmission {
     if (!NICKNAME_PATTERN.matches(trimmed)) {
         throw ValidationException("Nickname must be 1-20 characters: letters, numbers, spaces, - or _.")
     }
+    if (containsBlockedContent(trimmed)) {
+        throw ValidationException("Nickname contains a blocked word.")
+    }
     if (score < 0 || score > MAX_PLAUSIBLE_SCORE) {
         throw ValidationException("Score out of plausible range.")
     }
