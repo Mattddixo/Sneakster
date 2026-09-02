@@ -15,6 +15,11 @@ class GameEngine(
     private val random: Random = Random.Default,
 ) {
     private val headSpawnClearance = config.headRadius * 4f
+    // Obstacles get a much wider berth than power-ups/tokens: those are meant to be reached and
+    // grabbed as soon as they're visible, but an obstacle popping into existence right next to
+    // the vehicle gives no time to react before it's already a collision. Three times the
+    // general clearance above.
+    private val obstacleSpawnClearance = config.headRadius * 12f
     private val survivalPointsPerSecondPerSpeedUnit = 0.15f
 
     // DIAMOND_ROTATE only rotates the *rendering*, not the arena's own coordinates - the UI
@@ -361,7 +366,7 @@ class GameEngine(
 
     private fun spawnObstacle() {
         if (obstacles.size >= config.maxConcurrentObstacles) return
-        val position = findSpawnPosition(config.obstacleRadius) ?: return
+        val position = findSpawnPosition(config.obstacleRadius, obstacleSpawnClearance) ?: return
         obstacles.add(
             Obstacle(
                 id = nextId++,
@@ -373,14 +378,16 @@ class GameEngine(
         )
     }
 
-    /** Rejection-samples a spot clear of the vehicle's head and other entities; gives up after a few tries. */
-    private fun findSpawnPosition(radius: Float): Vec2? {
+    /** Rejection-samples a spot clear of the vehicle's head and other entities; gives up after a
+     * few tries. [minDistanceFromHead] defaults to the general clearance shared by power-ups and
+     * tokens; obstacles pass the much wider [obstacleSpawnClearance] instead. */
+    private fun findSpawnPosition(radius: Float, minDistanceFromHead: Float = headSpawnClearance): Vec2? {
         repeat(20) {
             val candidate = Vec2(
                 x = radius + random.nextFloat() * (config.arenaWidth - 2 * radius),
                 y = radius + random.nextFloat() * (config.arenaHeight - 2 * radius),
             )
-            val clearOfHead = candidate.distanceTo(head) > headSpawnClearance
+            val clearOfHead = candidate.distanceTo(head) > minDistanceFromHead
             val clearOfObstacles = obstacles.none { candidate.distanceTo(it.position) < it.radius + radius + 8f }
             val clearOfPowerUps = powerUps.none { candidate.distanceTo(it.position) < it.radius + radius + 8f }
             if (clearOfHead && clearOfObstacles && clearOfPowerUps) return candidate

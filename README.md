@@ -25,7 +25,9 @@ feeling the same twice. Scores go to a small self-hosted leaderboard.
   and the run ends; ram it from that back wedge and it's destroyed instead,
   awarding a solid score bonus on top of the points you're already earning
   just for staying alive. Obstacles don't expire on their own — they sit
-  there until you destroy one or the run ends.
+  there until you destroy one or the run ends. New ones never spawn right
+  on top of you — they keep a wide berth so a fresh obstacle is never the
+  reason you didn't have time to react.
 - Glowing circles are optional pickups, kept to a small, easy-to-read set:
   slow down, a shield charge, tokens (the currency for the Shop, below),
   and a rare one that rotates the whole arena another 45° clockwise every

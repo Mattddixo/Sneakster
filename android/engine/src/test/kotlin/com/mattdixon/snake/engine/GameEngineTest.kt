@@ -151,6 +151,35 @@ class GameEngineTest {
     }
 
     @Test
+    fun `newly spawned obstacles never appear inside the wider obstacle spawn clearance`() {
+        // HARD spawns obstacles most often (3-6s), giving the best odds of exercising the
+        // natural spawn cycle within a reasonably short simulated run.
+        val config = GameConfig(arenaWidth = 2000f, arenaHeight = 2000f, difficulty = Difficulty.HARD)
+        val engine = GameEngine(config, random = Random(7))
+        // Mirrors GameEngine's private obstacleSpawnClearance (headRadius * 12) - not exposed
+        // directly, so recomputed here the same way other tests recompute the engine's formulas.
+        val obstacleSpawnClearance = config.headRadius * 12f
+
+        var previousIds = engine.currentState().obstacles.map { it.id }.toSet()
+        var sawASpawn = false
+
+        repeat(3000) {
+            val state = engine.update(FIXED_DT)
+            state.obstacles.filter { it.id !in previousIds }.forEach { obstacle ->
+                sawASpawn = true
+                val distance = state.head.distanceTo(obstacle.position)
+                assertTrue(
+                    distance >= obstacleSpawnClearance,
+                    "expected a newly spawned obstacle to be at least $obstacleSpawnClearance from the head, but it was $distance",
+                )
+            }
+            previousIds = state.obstacles.map { it.id }.toSet()
+        }
+
+        assertTrue(sawASpawn, "expected at least one obstacle to spawn during the test window")
+    }
+
+    @Test
     fun `collecting a shield power-up grants a shield charge`() {
         val engine = GameEngine(quietConfig(), random = Random(1))
         val head = engine.currentState().head
