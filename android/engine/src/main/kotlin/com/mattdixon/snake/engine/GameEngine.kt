@@ -22,6 +22,16 @@ class GameEngine(
     private val obstacleSpawnClearance = config.headRadius * 12f
     private val survivalPointsPerSecondPerSpeedUnit = 0.15f
 
+    // "Magnet" obstacle facing: within obstacleMagnetRangeRadius of the head, an obstacle
+    // accelerates its rotation toward pointing at the vehicle - the further off it's aimed, the
+    // faster it turns (like a compass needle, torque proportional to the angle), capped at
+    // obstacleMaxAngularSpeedRadiansPerSecond. Outside that range, the same acceleration cap
+    // decelerates whatever spin it already has toward zero instead of snapping to a stop, so
+    // peeling away reads as coasting to a halt rather than the obstacle losing interest instantly.
+    private val obstacleMagnetRangeRadius = config.headRadius * 10f
+    private val obstacleMaxAngularSpeedRadiansPerSecond = 2.5f
+    private val obstacleAngularAccelerationRadiansPerSecondSquared = 3f
+
     // DIAMOND_ROTATE only rotates the *rendering*, not the arena's own coordinates - the UI
     // clips the rotated square to a same-size window, which cuts off its four corners (that's
     // what makes it read as an octagon rather than a shrinking diamond). Without this, the head
@@ -126,6 +136,14 @@ class GameEngine(
         diamondRotationStage = stage
     }
 
+    /** Test-only hook: sets every current obstacle's angular velocity directly, so momentum/
+     * friction behavior can be tested without first maneuvering into and back out of magnet range. */
+    internal fun debugSetObstacleAngularVelocities(angularVelocityRadiansPerSecond: Float) {
+        for (i in obstacles.indices) {
+            obstacles[i] = obstacles[i].copy(angularVelocityRadiansPerSecond = angularVelocityRadiansPerSecond)
+        }
+    }
+
     fun update(dtSeconds: Float): GameState {
         if (status != GameStatus.Playing) return snapshot(emptyList())
         val events = mutableListOf<GameEvent>()
@@ -137,6 +155,7 @@ class GameEngine(
         speed = currentSpeed()
         moveHead(dtSeconds, events)
         updateTrail()
+        updateObstacleFacings(dtSeconds)
 
         checkObstacleCollisions(events)
         expirePowerUps()
@@ -297,6 +316,42 @@ class GameEngine(
         val rearAngle = normalizeAngle(obstacle.facingRadians + PI.toFloat())
         val angleFromRear = kotlin.math.abs(normalizeAngle(impactAngle - rearAngle))
         return angleFromRear < obstacleBackArcHalfAngleRadians
+    }
+
+    /** Turns every obstacle's facing, magnet-like, toward the head when it's close enough -
+     * see [obstacleMagnetRangeRadius]. Reused for both directions of the acceleration cap: the
+     * "pull" while in range and the "friction" once out of it are the same [moveToward] call
+     * toward a different target (a proportional angle-to-target speed, or zero), which is what
+     * makes leaving range read as coasting to a stop instead of an instant snap. */
+    private fun updateObstacleFacings(dt: Float) {
+        for (i in obstacles.indices) {
+            val obstacle = obstacles[i]
+            val inRange = head.distanceTo(obstacle.position) < obstacleMagnetRangeRadius
+
+            val targetAngularVelocity = if (inRange) {
+                val bearingToHead = (head - obstacle.position).angleRadians()
+                val angleError = normalizeAngle(bearingToHead - obstacle.facingRadians)
+                val angularGain = obstacleMaxAngularSpeedRadiansPerSecond / PI.toFloat()
+                (angleError * angularGain).coerceIn(-obstacleMaxAngularSpeedRadiansPerSecond, obstacleMaxAngularSpeedRadiansPerSecond)
+            } else {
+                0f
+            }
+
+            val newAngularVelocity = moveToward(
+                current = obstacle.angularVelocityRadiansPerSecond,
+                target = targetAngularVelocity,
+                maxDelta = obstacleAngularAccelerationRadiansPerSecondSquared * dt,
+            )
+            val newFacing = normalizeAngle(obstacle.facingRadians + newAngularVelocity * dt)
+            obstacles[i] = obstacle.copy(facingRadians = newFacing, angularVelocityRadiansPerSecond = newAngularVelocity)
+        }
+    }
+
+    /** Steps [current] toward [target] by at most [maxDelta], landing exactly on it rather than
+     * overshooting once it's within reach. */
+    private fun moveToward(current: Float, target: Float, maxDelta: Float): Float {
+        val diff = target - current
+        return if (kotlin.math.abs(diff) <= maxDelta) target else current + maxDelta * kotlin.math.sign(diff)
     }
 
     private fun endRound(reason: GameOverReason, events: MutableList<GameEvent>) {
