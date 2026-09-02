@@ -11,5 +11,9 @@ import org.jetbrains.exposed.sql.javatime.timestamp
 object PoolContributions : LongIdTable("pool_contributions") {
     val effectType = varchar("effect_type", 32)
     val contributedBy = varchar("contributed_by", 20)
+    /** The contributing device's locally-generated UUID (see PoolDto.kt) - used only to cap how
+     * fast one install can add to the pool, per [PoolRepository.MAX_CONTRIBUTIONS_PER_DEVICE].
+     * Not an account: nothing else is ever looked up by it, and no login is required. */
+    val deviceId = varchar("device_id", 36)
     val createdAt = timestamp("created_at")
 }

@@ -1,6 +1,7 @@
 package com.mattdixon.snakeapi.routes
 
 import com.mattdixon.snakeapi.db.PoolRepository
+import com.mattdixon.snakeapi.model.ApiError
 import com.mattdixon.snakeapi.model.PoolContributionRequest
 import com.mattdixon.snakeapi.model.validated
 import com.mattdixon.snakeapi.plugins.PoolRateLimit
@@ -18,8 +19,12 @@ fun Route.poolRoutes() {
         rateLimit(PoolRateLimit) {
             post("/contribute") {
                 val contribution = call.receive<PoolContributionRequest>().validated()
-                PoolRepository.contribute(contribution)
-                call.respond(HttpStatusCode.Created)
+                val accepted = PoolRepository.contribute(contribution)
+                if (accepted) {
+                    call.respond(HttpStatusCode.Created)
+                } else {
+                    call.respond(HttpStatusCode.TooManyRequests, ApiError("This device has contributed too many effects recently. Try again later."))
+                }
             }
 
             post("/pull") {

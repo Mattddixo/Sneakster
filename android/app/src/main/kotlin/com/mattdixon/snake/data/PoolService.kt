@@ -15,10 +15,10 @@ import io.ktor.http.contentType
  */
 class PoolService(private val client: HttpClient, private val baseUrl: () -> String) {
 
-    suspend fun contribute(nickname: String, effectType: SharedEffectType): LeaderboardResult<Unit> = safeCall {
+    suspend fun contribute(nickname: String, deviceId: String, effectType: SharedEffectType): LeaderboardResult<Unit> = safeCall {
         client.post("${resolveBaseUrl(baseUrl)}/api/v1/pool/contribute") {
             contentType(ContentType.Application.Json)
-            setBody(PoolContributionRequest(nickname = nickname, effectType = effectType.name))
+            setBody(PoolContributionRequest(nickname = nickname, effectType = effectType.name, deviceId = deviceId))
         }
         Unit
     }

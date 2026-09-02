@@ -21,6 +21,7 @@ enum class SharedEffectType(val displayName: String, val tokenCost: Int, val hel
 data class PoolContributionRequest(
     val nickname: String,
     val effectType: String,
+    val deviceId: String,
 )
 
 @Serializable

@@ -17,7 +17,7 @@ accounts — a score submission is just a nickname, a score, and a difficulty.
 | GET    | `/health`            | —                                          | used by the Docker healthcheck |
 | GET    | `/api/v1/leaderboard`| `?limit=20&difficulty=easy\|normal\|hard`  | top scores, highest first |
 | POST   | `/api/v1/scores`     | `{"nickname","score","difficulty"}`        | rate-limited to 10/min per IP |
-| POST   | `/api/v1/pool/contribute` | `{"nickname","effectType"}`           | adds one pending effect to the shared pool; rate-limited to 20/min per IP |
+| POST   | `/api/v1/pool/contribute` | `{"nickname","effectType","deviceId"}`| adds one pending effect to the shared pool; rate-limited to 20/min per IP, plus a per-device cap below |
 | POST   | `/api/v1/pool/pull`  | —                                          | pops one random pending effect (204 if the pool is empty); same rate limit |
 
 Nicknames are 1–20 characters (letters, numbers, space, `-`, `_`); scores are
@@ -32,6 +32,15 @@ client spends its own locally-persisted tokens before calling contribute,
 same trust model as the rest of this casual, no-auth backend. A pull is
 consumed the instant it's handed out, so it can never be given to two
 different players.
+
+`deviceId` is a UUID the Android app generates once on first launch and
+persists locally — not an account, no login, nothing else is ever looked up
+by it. It exists purely so the server can cap contributions per install
+(10 per rolling hour, see `PoolRepository.MAX_CONTRIBUTIONS_PER_DEVICE`)
+independently of the per-IP rate limit above, since a NAT'd household or a
+scripted client hammering the IP-based limit alone could otherwise flood
+the pool with one effect type. A device over its cap gets `429 Too Many
+Requests`.
 
 ## Configuration
 

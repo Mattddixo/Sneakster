@@ -8,6 +8,7 @@ import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import com.mattdixon.snake.engine.Difficulty
+import java.util.UUID
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 
@@ -25,6 +26,7 @@ class SettingsRepository(private val context: Context) {
         val SERVER_BASE_URL = stringPreferencesKey("server_base_url")
         val BEST_SCORE = intPreferencesKey("best_score")
         val TOKEN_BALANCE = intPreferencesKey("token_balance")
+        val DEVICE_ID = stringPreferencesKey("device_id")
     }
 
     val settings: Flow<GameSettings> = context.dataStore.data.map { prefs ->
@@ -92,5 +94,19 @@ class SettingsRepository(private val context: Context) {
             }
         }
         return spent
+    }
+
+    /** A random ID generated once on first use and persisted forever after - not tied to any
+     * account or login, just an anonymous per-install identity signal so the backend can rate-limit
+     * how fast one install floods the shared effects pool (see PoolService.contribute). Same
+     * atomic-edit trick as [trySpendTokens] so two concurrent callers can't each generate and
+     * persist a different ID. */
+    suspend fun getOrCreateDeviceId(): String {
+        var id = ""
+        context.dataStore.edit { prefs ->
+            val existing = prefs[Keys.DEVICE_ID]
+            id = existing ?: UUID.randomUUID().toString().also { prefs[Keys.DEVICE_ID] = it }
+        }
+        return id
     }
 }

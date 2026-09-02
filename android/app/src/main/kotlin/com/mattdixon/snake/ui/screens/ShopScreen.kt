@@ -64,7 +64,8 @@ fun ShopScreen(onBack: () -> Unit) {
         scope.launch {
             val nickname = settings.nickname.ifBlank { "Anonymous" }
             if (container.settingsRepository.trySpendTokens(effect.tokenCost)) {
-                when (val result = container.poolService.contribute(nickname, effect)) {
+                val deviceId = container.settingsRepository.getOrCreateDeviceId()
+                when (val result = container.poolService.contribute(nickname, deviceId, effect)) {
                     is LeaderboardResult.Success -> justContributed = effect
                     is LeaderboardResult.Failure -> {
                         container.settingsRepository.addTokens(effect.tokenCost) // refund
