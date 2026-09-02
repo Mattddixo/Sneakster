@@ -13,8 +13,8 @@ class PoolValidationTest {
 
     @Test
     fun `accepts a known effect type and normalizes case`() {
-        val result = PoolContributionRequest(nickname = "  Mat_Dixon-77  ", effectType = "shared_gift", deviceId = VALID_DEVICE_ID).validated()
-        assertEquals("Mat_Dixon-77", result.nickname)
+        val result = PoolContributionRequest(nickname = "  phatboislim-77  ", effectType = "shared_gift", deviceId = VALID_DEVICE_ID).validated()
+        assertEquals("phatboislim-77", result.nickname)
         assertEquals("SHARED_GIFT", result.effectType)
     }
 

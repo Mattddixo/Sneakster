@@ -11,8 +11,8 @@ class ScoreValidationTest {
 
     @Test
     fun `accepts a normal submission and normalizes it`() {
-        val result = ScoreSubmission(nickname = "  Mat_Dixon-77  ", score = 4200, difficulty = "HARD").validated()
-        assertEquals("Mat_Dixon-77", result.nickname)
+        val result = ScoreSubmission(nickname = "  phatboislim-77  ", score = 4200, difficulty = "HARD").validated()
+        assertEquals("phatboislim-77", result.nickname)
         assertEquals("hard", result.difficulty)
     }
 

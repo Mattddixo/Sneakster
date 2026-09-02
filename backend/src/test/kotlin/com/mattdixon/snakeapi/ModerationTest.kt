@@ -19,6 +19,6 @@ class ModerationTest {
 
     @Test
     fun `allows an ordinary nickname`() {
-        assertFalse(containsBlockedContent("Mat_Dixon-77"))
+        assertFalse(containsBlockedContent("phatboislim-77"))
     }
 }
