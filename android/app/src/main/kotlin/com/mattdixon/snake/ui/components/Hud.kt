@@ -87,10 +87,11 @@ private fun RowScope.ShieldBadge(charges: Int) {
 
 @Composable
 private fun RowScope.EffectBadge(type: PowerUpType) {
-    // SPAWN_OBSTACLE, TOKEN and SHIELD never sit in activeEffects (zero effect duration), so
-    // they never reach this badge - only the timed effects do. SHIELD gets its own badge above,
-    // since it's a persistent charge count rather than an expiring timer.
-    if (type == PowerUpType.SPAWN_OBSTACLE || type == PowerUpType.TOKEN || type == PowerUpType.SHIELD) return
+    // TOKEN and SHIELD never sit in activeEffects (zero effect duration), so they never reach
+    // this badge - only the timed effects do. SHIELD gets its own badge above, since it's a
+    // persistent charge count rather than an expiring timer. SHARED_SHIELD is likewise instant
+    // (it just grants a charge, same as SHIELD) so it never lands here either.
+    if (type == PowerUpType.TOKEN || type == PowerUpType.SHIELD || type == PowerUpType.SHARED_SHIELD) return
     Text(
         text = powerUpLabel(type),
         color = Color.Black,
@@ -103,25 +104,31 @@ private fun RowScope.EffectBadge(type: PowerUpType) {
 }
 
 /** What each colored orb on the board means, laid out as two full-width rows (rather than a
- * scrollable strip) so every entry is visible at a glance without needing to swipe mid-game. */
+ * scrollable strip) so every entry is visible at a glance without needing to swipe mid-game.
+ * Every pool-exclusive type collapses into a single "POOL" entry here, matching how they all
+ * share one color on the board - the legend explains the mystery, not what's inside it. */
 @Composable
 fun PowerUpLegend(modifier: Modifier = Modifier) {
-    val types = PowerUpType.entries
-    val rows = types.chunked((types.size + 1) / 2)
+    val (poolTypes, regularTypes) = PowerUpType.entries.partition { it.poolExclusive }
+    val entries = buildList {
+        regularTypes.forEach { add(powerUpColor(it) to powerUpLabel(it)) }
+        poolTypes.firstOrNull()?.let { add(powerUpColor(it) to "POOL") }
+    }
+    val rows = entries.chunked((entries.size + 1) / 2)
     Column(modifier = modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(2.dp)) {
-        rows.forEach { rowTypes ->
+        rows.forEach { rowEntries ->
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly) {
-                rowTypes.forEach { type -> LegendEntry(type) }
+                rowEntries.forEach { (color, label) -> LegendEntry(color, label) }
             }
         }
     }
 }
 
 @Composable
-private fun LegendEntry(type: PowerUpType) {
+private fun LegendEntry(color: Color, label: String) {
     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-        Box(Modifier.size(7.dp).background(powerUpColor(type), CircleShape))
-        Text(text = powerUpLabel(type), color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 9.sp)
+        Box(Modifier.size(7.dp).background(color, CircleShape))
+        Text(text = label, color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 9.sp)
     }
 }
 

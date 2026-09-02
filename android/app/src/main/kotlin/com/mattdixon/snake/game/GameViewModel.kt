@@ -118,6 +118,8 @@ class GameViewModel(
     private fun sharedEffectPowerUpType(raw: String): PowerUpType? = when (raw) {
         SharedEffectType.SHARED_GIFT.name -> PowerUpType.SHARED_GIFT
         SharedEffectType.SHARED_PRANK.name -> PowerUpType.SHARED_PRANK
+        SharedEffectType.SHARED_SHIELD.name -> PowerUpType.SHARED_SHIELD
+        SharedEffectType.SHARED_FOG.name -> PowerUpType.SHARED_FOG
         else -> null
     }
 }

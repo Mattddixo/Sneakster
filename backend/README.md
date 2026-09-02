@@ -24,9 +24,10 @@ Nicknames are 1–20 characters (letters, numbers, space, `-`, `_`); scores are
 capped at a plausible maximum server-side. This is basic sanity-checking,
 not real anti-cheat — treat the leaderboard as casual, not competitive.
 
-`effectType` must be one of `SHARED_GIFT` or `SHARED_PRANK` (kept in sync
-with the Android app's pool-exclusive `PowerUpType` entries — see
-`model/PoolDto.kt`). The server doesn't track token balances at all; the
+`effectType` must be one of `SHARED_GIFT`, `SHARED_PRANK`, `SHARED_SHIELD`,
+or `SHARED_FOG` (kept in sync with the Android app's pool-exclusive
+`PowerUpType` entries — see `model/PoolDto.kt`). The server doesn't track
+token balances at all; the
 client spends its own locally-persisted tokens before calling contribute,
 same trust model as the rest of this casual, no-auth backend. A pull is
 consumed the instant it's handed out, so it can never be given to two

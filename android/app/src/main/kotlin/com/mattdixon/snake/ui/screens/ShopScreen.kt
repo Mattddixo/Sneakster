@@ -8,7 +8,10 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.safeDrawingPadding
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material3.Button
@@ -45,7 +48,7 @@ fun ShopScreen(onBack: () -> Unit) {
     var justContributed by remember { mutableStateOf<SharedEffectType?>(null) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
 
-    Column(Modifier.fillMaxSize().padding(16.dp)) {
+    Column(Modifier.fillMaxSize().safeDrawingPadding().verticalScroll(rememberScrollState()).padding(16.dp)) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             IconButton(onClick = onBack) { Icon(Icons.Filled.ArrowBack, contentDescription = "Back") }
             Text("Shop", style = MaterialTheme.typography.titleLarge)
@@ -147,4 +150,6 @@ private fun EffectCard(
 private fun effectDescription(effect: SharedEffectType): String = when (effect) {
     SharedEffectType.SHARED_GIFT -> "Bonus points and a speed boost for whoever finds it"
     SharedEffectType.SHARED_PRANK -> "Bonus points, but it drops extra obstacles nearby"
+    SharedEffectType.SHARED_SHIELD -> "Instantly grants a shield charge to whoever finds it"
+    SharedEffectType.SHARED_FOG -> "Bonus points, but it dims their board for a few seconds"
 }

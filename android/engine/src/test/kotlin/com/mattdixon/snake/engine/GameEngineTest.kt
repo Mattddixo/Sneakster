@@ -192,10 +192,10 @@ class GameEngineTest {
     }
 
     @Test
-    fun `collecting a speed-up power-up increases speed`() {
+    fun `collecting a shared gift increases speed`() {
         val engine = GameEngine(quietConfig(), random = Random(1))
         val head = engine.currentState().head
-        engine.debugPlacePowerUp(position = Vec2(head.x, head.y - 100f), type = PowerUpType.SPEED_UP)
+        engine.debugPlacePowerUp(position = Vec2(head.x, head.y - 100f), type = PowerUpType.SHARED_GIFT)
 
         var collected = false
         var stateAfter = engine.currentState()
@@ -208,8 +208,8 @@ class GameEngineTest {
         }
 
         assertTrue(collected, "expected the vehicle to reach and collect the power-up")
-        assertTrue(stateAfter.activeEffects.containsKey(PowerUpType.SPEED_UP))
-        assertTrue(stateAfter.speed > Difficulty.NORMAL.baseSpeed, "speed-up should raise speed above the base ramp value")
+        assertTrue(stateAfter.activeEffects.containsKey(PowerUpType.SHARED_GIFT))
+        assertTrue(stateAfter.speed > Difficulty.NORMAL.baseSpeed, "a shared gift's speed boost should raise speed above the base ramp value")
     }
 
     @Test

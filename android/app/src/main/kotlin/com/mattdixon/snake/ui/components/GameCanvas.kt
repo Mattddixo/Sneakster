@@ -18,6 +18,7 @@ import com.mattdixon.snake.engine.GameState
 import com.mattdixon.snake.engine.OBSTACLE_BACK_ARC_HALF_ANGLE_DEGREES
 import com.mattdixon.snake.engine.Obstacle
 import com.mattdixon.snake.engine.PowerUp
+import com.mattdixon.snake.engine.PowerUpType
 import com.mattdixon.snake.engine.Vec2
 import com.mattdixon.snake.ui.theme.AccentPrimary
 import com.mattdixon.snake.ui.theme.ArenaBackground
@@ -47,9 +48,10 @@ private const val OBSTACLE_SPAWN_ANIMATION_SECONDS = 0.25f
  */
 @Composable
 fun GameCanvas(state: GameState, arenaWidth: Float, arenaHeight: Float, headRadius: Float = 7f, modifier: Modifier = Modifier) {
+    val isFoggy = state.activeEffects.containsKey(PowerUpType.SHARED_FOG)
     Canvas(modifier = modifier.background(ArenaBackground)) {
         scale(scaleX = density, scaleY = density, pivot = Offset.Zero) {
-            drawGrid(arenaWidth, arenaHeight)
+            if (isFoggy) drawFogOverlay(arenaWidth, arenaHeight) else drawGrid(arenaWidth, arenaHeight)
             state.obstacles.forEach { drawObstacle(it, state.elapsedSeconds) }
             state.powerUps.forEach { drawPowerUp(it, state.elapsedSeconds) }
             drawVehicle(state, headRadius)
@@ -69,6 +71,13 @@ private fun DrawScope.drawGrid(arenaWidth: Float, arenaHeight: Float, spacing: F
         drawLine(ArenaGrid, Offset(0f, y), Offset(arenaWidth, y), strokeWidth = 1f)
         y += spacing
     }
+}
+
+/** A SHARED_FOG prank in effect: the grid disappears and a dark haze settles over the board -
+ * obstacles, pickups and the vehicle itself stay at full visibility (drawn after this), so it's
+ * disorienting rather than actually unplayable. */
+private fun DrawScope.drawFogOverlay(arenaWidth: Float, arenaHeight: Float) {
+    drawRect(color = Color.Black.copy(alpha = 0.4f), size = Size(arenaWidth, arenaHeight))
 }
 
 /** A crisp, clearly visible edge so the playable bounds read at a glance, distinct from the

@@ -3,7 +3,7 @@ package com.mattdixon.snakeapi.model
 import kotlinx.serialization.Serializable
 
 /** Keep in sync with the Android app's pool-exclusive PowerUpType entries. */
-private val VALID_EFFECT_TYPES = setOf("SHARED_GIFT", "SHARED_PRANK")
+private val VALID_EFFECT_TYPES = setOf("SHARED_GIFT", "SHARED_PRANK", "SHARED_SHIELD", "SHARED_FOG")
 
 @Serializable
 data class PoolContributionRequest(

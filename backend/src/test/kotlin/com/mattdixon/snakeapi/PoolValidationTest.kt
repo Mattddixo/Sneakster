@@ -17,6 +17,12 @@ class PoolValidationTest {
     }
 
     @Test
+    fun `accepts the newer shield and fog effect types`() {
+        assertEquals("SHARED_SHIELD", PoolContributionRequest(nickname = "player", effectType = "shared_shield").validated().effectType)
+        assertEquals("SHARED_FOG", PoolContributionRequest(nickname = "player", effectType = "shared_fog").validated().effectType)
+    }
+
+    @Test
     fun `rejects an unknown effect type`() {
         assertFailsWith<ValidationException> {
             PoolContributionRequest(nickname = "player", effectType = "SPEED_UP").validated()

@@ -6,6 +6,8 @@ import kotlinx.serialization.Serializable
 enum class SharedEffectType(val displayName: String, val tokenCost: Int) {
     SHARED_GIFT("Gift", tokenCost = 30),
     SHARED_PRANK("Prank", tokenCost = 20),
+    SHARED_SHIELD("Shield Gift", tokenCost = 35),
+    SHARED_FOG("Fog Prank", tokenCost = 15),
 }
 
 @Serializable

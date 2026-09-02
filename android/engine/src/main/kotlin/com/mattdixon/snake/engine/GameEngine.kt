@@ -115,7 +115,6 @@ class GameEngine(
 
     private fun currentSpeed(): Float {
         var multiplier = 1f
-        if (isEffectActive(PowerUpType.SPEED_UP)) multiplier *= 1.5f
         if (isEffectActive(PowerUpType.SLOW_DOWN)) multiplier *= 0.55f
         if (isEffectActive(PowerUpType.SHARED_GIFT)) multiplier *= 1.4f
         return config.difficulty.baseSpeedAt(elapsedSeconds) * config.scale * multiplier
@@ -239,10 +238,10 @@ class GameEngine(
             if (powerUp.type.effectDurationSeconds > 0f) {
                 activeEffects[powerUp.type] = elapsedSeconds + powerUp.type.effectDurationSeconds
             }
-            if (powerUp.type == PowerUpType.SPAWN_OBSTACLE || powerUp.type == PowerUpType.SHARED_PRANK) {
+            if (powerUp.type == PowerUpType.SHARED_PRANK) {
                 repeat(if (random.nextBoolean()) 2 else 1) { spawnObstacle() }
             }
-            if (powerUp.type == PowerUpType.SHIELD) {
+            if (powerUp.type == PowerUpType.SHIELD || powerUp.type == PowerUpType.SHARED_SHIELD) {
                 shieldCharges = (shieldCharges + 1).coerceAtMost(maxShieldCharges)
             }
             events.add(GameEvent.PowerUpCollected(powerUp.type))

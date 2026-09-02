@@ -26,11 +26,13 @@ feeling the same twice. Scores go to a small self-hosted leaderboard.
   awarding a solid score bonus on top of the points you're already earning
   just for staying alive. Obstacles don't expire on their own — they sit
   there until you destroy one or the run ends.
-- Glowing circles are optional pickups: speed up, slow down, dropping fresh
-  obstacles onto the field in exchange for bonus points (more hazards to
-  dodge, but also more exposed backs to farm), a shield charge, or a rare
-  one that rotates the whole arena 45° — clipped rather than shrunk to fit,
-  so it reads as an octagon partway through the turn.
+- Glowing circles are optional pickups, kept to a small, easy-to-read set:
+  slow down, a shield charge, tokens (the currency for the Shop, below),
+  and a rare one that rotates the whole arena 45° — clipped rather than
+  shrunk to fit, so it reads as an octagon partway through the turn. A
+  fifth color marks anything pulled from the shared effects pool (see
+  below) — deliberately one color for all of them, since which specific
+  effect you got is meant to be a surprise.
 - A shield charge turns a bad hit into a bounce-off instead of ending the
   run (with a brief moment of invincibility so you don't immediately eat
   another one) — up to two at a time. Find them as pickups, or earn one for
@@ -43,12 +45,17 @@ feeling the same twice. Scores go to a small self-hosted leaderboard.
 ## Tokens and the shared effects pool
 
 Small token pickups appear on the board too. Tokens are spent from the Shop
-screen to leave a gift (or a prank) in a pool shared across everyone playing
-against that backend — not for yourself. Each round, sometime in its first
-two minutes, the game pulls one pending effect from that pool (if there is
-one) and drops it into your match. It's a way for players to leave each
-other something without ever knowing who it came from. See
-`backend/README.md` for the pool's API and trust model.
+screen to leave an effect in a pool shared across everyone playing against
+that backend — not for yourself. The Shop currently offers four: a Gift
+(bonus points plus a speed boost), a Prank (bonus points, but it drops extra
+obstacles nearby), a Shield Gift (instantly grants a shield charge), and a
+Fog Prank (bonus points, but dims the board for a few seconds). Each round,
+sometime in its first two minutes, the game pulls one pending effect from
+that pool (if there is one) and drops it into your match — as one of the
+five orb colors above, so you won't know which of the four it is until you
+collect it. It's a way for players to leave each other something without
+ever knowing who it came from. See `backend/README.md` for the pool's API
+and trust model.
 
 ## Repo layout and why it's split this way
 

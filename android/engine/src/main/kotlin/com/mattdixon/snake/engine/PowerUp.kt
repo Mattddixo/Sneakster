@@ -11,15 +11,8 @@ enum class PowerUpType(
      * [GameEngine.placeSpecificPowerUp] when a shared-pool pull needs to appear on the board. */
     val poolExclusive: Boolean = false,
 ) {
-    /** Boosts speed for a short burst — more score per second, more risk. */
-    SPEED_UP(scoreBonus = 15, effectDurationSeconds = 5f),
-
     /** Eases speed off for a few seconds so a tight spot can be threaded safely. */
     SLOW_DOWN(scoreBonus = 10, effectDurationSeconds = 5f),
-
-    /** Risk/reward: drops fresh obstacles elsewhere on the field in exchange for bonus points -
-     * more hazards to dodge, but also more exposed backs to ram for a destroy bonus. */
-    SPAWN_OBSTACLE(scoreBonus = 30, effectDurationSeconds = 0f),
 
     /** Purely visual: the UI spins the arena from square to diamond and back. Doesn't touch
      * physics or collision at all — the engine just tracks that it's active, like any other
@@ -41,9 +34,18 @@ enum class PowerUpType(
      * boost. Never spawns on its own — only via [GameEngine.placeSpecificPowerUp]. */
     SHARED_GIFT(scoreBonus = 50, effectDurationSeconds = 6f, poolExclusive = true),
 
-    /** Also from the shared pool, but mischievous: bonus points, but it drops extra obstacles
-     * just like SPAWN_OBSTACLE does. Never spawns on its own. */
+    /** Also from the shared pool, but mischievous: bonus points, but it drops extra obstacles.
+     * Never spawns on its own. */
     SHARED_PRANK(scoreBonus = 25, effectDurationSeconds = 5f, poolExclusive = true),
+
+    /** From the shared pool: instantly grants the finder a shield charge, same handling as the
+     * regular SHIELD pickup. A pure gift - never spawns on its own. */
+    SHARED_SHIELD(scoreBonus = 10, effectDurationSeconds = 0f, poolExclusive = true),
+
+    /** From the shared pool, mischievous: dims the board for a few seconds. Purely visual, no
+     * collision impact - just makes the finder's board harder to read at a glance for a bit.
+     * Never spawns on its own. */
+    SHARED_FOG(scoreBonus = 10, effectDurationSeconds = 5f, poolExclusive = true),
 }
 
 data class PowerUp(
