@@ -18,16 +18,6 @@ class GameEngineTest {
         arenaHeight: Float = 2000f,
     ) = GameConfig(arenaWidth = arenaWidth, arenaHeight = arenaHeight, difficulty = Difficulty.NORMAL)
 
-    /** Signed angular difference between where [obstacle] would need to face to point directly
-     * at the head in [state] and where it's actually facing, normalized to (-PI, PI]. */
-    private fun angleErrorToHead(state: GameState, obstacle: Obstacle): Float {
-        val bearing = (state.head - obstacle.position).angleRadians()
-        var diff = bearing - obstacle.facingRadians
-        while (diff > PI) diff -= (2 * PI).toFloat()
-        while (diff < -PI) diff += (2 * PI).toFloat()
-        return diff
-    }
-
     @Test
     fun `vehicle moves forward along its heading each tick`() {
         val engine = GameEngine(quietConfig(), random = Random(1))
@@ -187,59 +177,6 @@ class GameEngineTest {
         }
 
         assertTrue(sawASpawn, "expected at least one obstacle to spawn during the test window")
-    }
-
-    @Test
-    fun `an obstacle within magnet range turns to reduce its facing error toward the head`() {
-        val engine = GameEngine(quietConfig(), random = Random(1))
-        val head = engine.currentState().head
-        // 30 units to the side - well inside the 70-unit magnet range at this config's default
-        // headRadius - facing directly away from the head for the largest possible starting
-        // error. Offset sideways rather than directly ahead so the vehicle's forward motion
-        // can't run it over mid-test.
-        engine.debugPlaceObstacle(position = Vec2(head.x + 30f, head.y), radius = 15f, facingRadians = 0f)
-        val initialError = angleErrorToHead(engine.currentState(), engine.currentState().obstacles.single())
-
-        var state = engine.currentState()
-        repeat(20) { state = engine.update(FIXED_DT) }
-
-        val laterError = angleErrorToHead(state, state.obstacles.single())
-        assertTrue(
-            kotlin.math.abs(laterError) < kotlin.math.abs(initialError),
-            "expected the obstacle to turn toward the head, reducing its facing error - was $initialError, now $laterError",
-        )
-    }
-
-    @Test
-    fun `an obstacle keeps spinning briefly after leaving magnet range, then decelerates to a stop`() {
-        val config = GameConfig(arenaWidth = 4000f, arenaHeight = 4000f, difficulty = Difficulty.NORMAL)
-        val engine = GameEngine(config, random = Random(1))
-        // Far from the vehicle's starting position (well beyond magnet range) - this is purely
-        // about what happens to existing spin, not about the pull itself.
-        engine.debugPlaceObstacle(position = Vec2(100f, 100f), radius = 15f, facingRadians = 0f)
-        engine.debugSetObstacleAngularVelocities(2f)
-
-        val justAfter = engine.update(FIXED_DT)
-        val velocityRightAway = justAfter.obstacles.single().angularVelocityRadiansPerSecond
-        assertTrue(velocityRightAway > 0f, "expected momentum to persist into the very next frame rather than snapping to zero")
-        assertTrue(velocityRightAway < 2f, "expected friction to have already started slowing it down")
-
-        repeat(120) { engine.update(FIXED_DT) }
-        val later = engine.currentState().obstacles.single().angularVelocityRadiansPerSecond
-        assertEquals(0f, later, "expected it to have fully decelerated to a stop by now")
-    }
-
-    @Test
-    fun `an obstacle far outside magnet range never starts turning on its own`() {
-        val config = GameConfig(arenaWidth = 4000f, arenaHeight = 4000f, difficulty = Difficulty.NORMAL)
-        val engine = GameEngine(config, random = Random(1))
-        engine.debugPlaceObstacle(position = Vec2(100f, 100f), radius = 15f, facingRadians = 1.23f)
-
-        repeat(120) { engine.update(FIXED_DT) }
-
-        val obstacle = engine.currentState().obstacles.single()
-        assertEquals(1.23f, obstacle.facingRadians, "an obstacle with nothing nearby shouldn't rotate at all")
-        assertEquals(0f, obstacle.angularVelocityRadiansPerSecond)
     }
 
     @Test

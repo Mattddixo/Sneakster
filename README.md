@@ -27,11 +27,7 @@ feeling the same twice. Scores go to a small self-hosted leaderboard.
   just for staying alive. Obstacles don't expire on their own — they sit
   there until you destroy one or the run ends. New ones never spawn right
   on top of you — they keep a wide berth so a fresh obstacle is never the
-  reason you didn't have time to react. Fly close to one and it turns to
-  face you, magnet-like — the closer to opposite your approach the back
-  ends up, the more you have to work for the shot. Peel away and it keeps
-  turning on its own momentum for a moment before settling, rather than
-  freezing the instant you leave.
+  reason you didn't have time to react.
 - Glowing circles are optional pickups, kept to a small, easy-to-read set:
   slow down, a shield charge, tokens (the currency for the Shop, below),
   and a rare one that rotates the whole arena another 45° clockwise every
