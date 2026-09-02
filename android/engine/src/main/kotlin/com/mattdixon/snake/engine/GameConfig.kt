@@ -26,7 +26,11 @@ data class GameConfig(
     val maxConcurrentPowerUps: Int = 2,
     val maxConcurrentObstacles: Int = 7,
     val tokenRadius: Float = 9f,
-    val tokenSpawnPeriodSeconds: ClosedFloatingPointRange<Float> = 12f..20f,
+    // Tight enough that a single decent run can plausibly afford the Shop's cheapest effect (8
+    // tokens): the old 12-20s period, with only one token on the board at a time and a 9-second
+    // window to reach each one, realistically yielded 2-3 collected tokens in a ~60-second run -
+    // short of even the cheapest price despite that being the explicit pricing goal.
+    val tokenSpawnPeriodSeconds: ClosedFloatingPointRange<Float> = 8f..13f,
     val maxConcurrentTokens: Int = 1,
 ) {
     init {

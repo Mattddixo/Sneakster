@@ -256,7 +256,17 @@ class GameEngineTest {
 
     @Test
     fun `a token disappears on its own if not collected in time`() {
-        val engine = GameEngine(quietConfig(), random = Random(1))
+        // This test runs well past the shortest spawn window (13s) to observe expiry, unlike
+        // quietConfig()'s other callers - so it needs its own config with natural token spawns
+        // pushed out of range, or a real spawn could land mid-test and the "no TOKEN present"
+        // assertion below would fail for the wrong reason.
+        val config = GameConfig(
+            arenaWidth = 2000f,
+            arenaHeight = 2000f,
+            difficulty = Difficulty.NORMAL,
+            tokenSpawnPeriodSeconds = 1000f..2000f,
+        )
+        val engine = GameEngine(config, random = Random(1))
         val head = engine.currentState().head
         // Well outside the arena bounds, so the vehicle can never actually reach it - this test
         // is only about the timer, not about collection.
@@ -265,7 +275,7 @@ class GameEngineTest {
         val justPlaced = engine.update(FIXED_DT)
         assertTrue(justPlaced.powerUps.any { it.type == PowerUpType.TOKEN }, "token should be present right after spawning")
 
-        repeat(600) { engine.update(FIXED_DT) } // 10 more simulated seconds, past TOKEN's 9s lifetime
+        repeat(780) { engine.update(FIXED_DT) } // 13 more simulated seconds, past TOKEN's 11s lifetime
 
         assertTrue(engine.currentState().powerUps.none { it.type == PowerUpType.TOKEN }, "token should have expired by now")
     }

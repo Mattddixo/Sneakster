@@ -11,10 +11,13 @@ val ObstacleColor = Color(0xFFFF5C5C)
  * green as the vehicle itself, so "safe to ram" reads at a glance against the danger-red body. */
 val ObstacleBackSafe = Color(0xFF6CFFA0)
 
-val PowerUpSlowDown = Color(0xFF4CC2FF)
-val PowerUpDiamondRotate = Color(0xFF5CE1E6)
-val PowerUpShield = Color(0xFF4CD6FF)
-val TokenColor = Color(0xFFFFD700)
+// One hue per board pickup, spread around the color wheel so no two are ever mistaken for each
+// other at a glance - these three used to be SLOW_DOWN 0xFF4CC2FF, DIAMOND_ROTATE 0xFF5CE1E6,
+// and SHIELD 0xFF4CD6FF, all blue/cyan variants sitting right on top of each other.
+val PowerUpSlowDown = Color(0xFF4C8DFF) // blue - the one pickup that keeps a "cold" association
+val PowerUpDiamondRotate = Color(0xFFFF4CD6) // magenta
+val PowerUpShield = Color(0xFFFFA13D) // orange
+val TokenColor = Color(0xFFFFD700) // gold
 /** Every shared-pool effect (gift, prank, or anything added to the shop later) renders as this
  * one color on the board — which specific effect a pull turns out to be is meant to be a
  * surprise, so nothing should hint at it before it's collected. */

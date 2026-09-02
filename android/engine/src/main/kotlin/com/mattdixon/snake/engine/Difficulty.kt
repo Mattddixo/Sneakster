@@ -19,7 +19,12 @@ enum class Difficulty(
         rampSeconds = 90f,
         turnRateRadiansPerSecond = 2.4f,
         obstacleSpawnPeriodSeconds = 6f..10f,
-        powerUpSpawnPeriodSeconds = 4f..7f,
+        // The regular power-up pool is 3 types (SLOW_DOWN, DIAMOND_ROTATE, SHIELD) since
+        // SPEED_UP/SPAWN_OBSTACLE were removed - down from 5. Same spawn timer would have made
+        // each survivor ~1.7x more frequent than before just from the smaller pool, which was
+        // especially noticeable for DIAMOND_ROTATE (a disruptive 6-second effect). These periods
+        // are widened to keep any one type's real-world frequency roughly where it was.
+        powerUpSpawnPeriodSeconds = 6f..10f,
     ),
     NORMAL(
         baseSpeed = 120f,
@@ -27,7 +32,7 @@ enum class Difficulty(
         rampSeconds = 75f,
         turnRateRadiansPerSecond = 2.7f,
         obstacleSpawnPeriodSeconds = 4f..7f,
-        powerUpSpawnPeriodSeconds = 5f..8f,
+        powerUpSpawnPeriodSeconds = 7f..11f,
     ),
     HARD(
         baseSpeed = 150f,
@@ -35,7 +40,7 @@ enum class Difficulty(
         rampSeconds = 60f,
         turnRateRadiansPerSecond = 3.0f,
         obstacleSpawnPeriodSeconds = 3f..6f,
-        powerUpSpawnPeriodSeconds = 5f..9f,
+        powerUpSpawnPeriodSeconds = 8f..12f,
     ),
     ;
 

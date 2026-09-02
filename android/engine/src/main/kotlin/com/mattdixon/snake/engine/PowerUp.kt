@@ -27,8 +27,10 @@ enum class PowerUpType(
     /** The currency collectible: a small score bonus, and it credits the player's persistent
      * token balance — the app layer is responsible for that half, by reacting to the
      * [GameEvent.PowerUpCollected] event this produces just like any other pickup. Unlike
-     * every other power-up, it expires on its own if not reached in time. */
-    TOKEN(scoreBonus = 5, effectDurationSeconds = 0f, lifetimeSeconds = 9f),
+     * every other power-up, it expires on its own if not reached in time. Lifetime is a bit
+     * longer than the gap between spawns so a faster spawn rate (see [GameConfig.tokenSpawnPeriodSeconds])
+     * actually converts into more *collected* tokens rather than more missed ones. */
+    TOKEN(scoreBonus = 5, effectDurationSeconds = 0f, lifetimeSeconds = 11f),
 
     /** A gift from another player's shared-pool contribution: bonus points plus a modest speed
      * boost. Never spawns on its own — only via [GameEngine.placeSpecificPowerUp]. */
