@@ -26,6 +26,11 @@ enum class PowerUpType(
      * timed effect, so the UI layer can read it from [GameState.activeEffects]. */
     DIAMOND_ROTATE(scoreBonus = 20, effectDurationSeconds = 6f),
 
+    /** Grants one shield charge (see [GameEngine]'s shield handling): the next obstacle hit that
+     * isn't a clean rear shot bounces the vehicle off instead of ending the run, consuming the
+     * charge. Not a timed effect - it just increments a persistent counter, same shape as TOKEN. */
+    SHIELD(scoreBonus = 15, effectDurationSeconds = 0f),
+
     /** The currency collectible: a small score bonus, and it credits the player's persistent
      * token balance — the app layer is responsible for that half, by reacting to the
      * [GameEvent.PowerUpCollected] event this produces just like any other pickup. Unlike

@@ -116,6 +116,82 @@ class GameEngineTest {
     }
 
     @Test
+    fun `collecting a shield power-up grants a shield charge`() {
+        val engine = GameEngine(quietConfig(), random = Random(1))
+        val head = engine.currentState().head
+        engine.debugPlacePowerUp(position = Vec2(head.x, head.y - 100f), type = PowerUpType.SHIELD)
+
+        var stateAfter = engine.currentState()
+        for (frame in 0 until 300) {
+            stateAfter = engine.update(FIXED_DT)
+            if (stateAfter.events.any { it is GameEvent.PowerUpCollected }) break
+        }
+
+        assertEquals(1, stateAfter.shieldCharges, "expected the shield pickup to grant a charge")
+    }
+
+    @Test
+    fun `a shield charge absorbs a bad hit instead of ending the round`() {
+        val engine = GameEngine(quietConfig(), random = Random(1))
+        engine.debugGrantShieldCharge()
+        val head = engine.currentState().head
+        // Same front-on setup as the "ends the round" test above, but this time with a shield
+        // charge in reserve.
+        engine.debugPlaceObstacle(
+            position = Vec2(head.x, head.y - 200f),
+            radius = 20f,
+            facingRadians = PI.toFloat() / 2f, // facing down, toward the oncoming vehicle
+        )
+
+        var consumedShield = false
+        var finalStatus: GameStatus = GameStatus.Playing
+        repeat(300) {
+            val state = engine.update(FIXED_DT)
+            if (state.events.any { it is GameEvent.ShieldConsumed }) consumedShield = true
+            finalStatus = state.status
+        }
+
+        assertTrue(consumedShield, "expected the shield to absorb the front hit")
+        assertEquals(GameStatus.Playing, finalStatus, "a shielded hit shouldn't end the round")
+        assertEquals(0, engine.currentState().shieldCharges, "the shield charge should be consumed")
+    }
+
+    @Test
+    fun `destroying enough obstacles earns a bonus shield charge`() {
+        val engine = GameEngine(quietConfig(), random = Random(1))
+        val head = engine.currentState().head
+        // Three obstacles in a row directly ahead, each with its exposed back facing the
+        // oncoming vehicle, spaced well apart so they're destroyed one at a time in sequence.
+        listOf(150f, 350f, 550f).forEach { distance ->
+            engine.debugPlaceObstacle(
+                position = Vec2(head.x, head.y - distance),
+                radius = 20f,
+                facingRadians = -PI.toFloat() / 2f,
+            )
+        }
+
+        var destroyedCount = 0
+        var shieldEarned = false
+        repeat(600) {
+            val state = engine.update(FIXED_DT)
+            destroyedCount += state.events.count { it is GameEvent.ObstacleDestroyed }
+            if (state.events.any { it is GameEvent.ShieldEarned }) shieldEarned = true
+        }
+
+        assertEquals(3, destroyedCount, "expected all three obstacles to be destroyed")
+        assertTrue(shieldEarned, "expected a bonus shield charge after destroying enough obstacles in a row")
+        assertEquals(1, engine.currentState().shieldCharges)
+    }
+
+    @Test
+    fun `shield charges are capped at the maximum`() {
+        val engine = GameEngine(quietConfig(), random = Random(1))
+        repeat(5) { engine.debugGrantShieldCharge() }
+
+        assertEquals(2, engine.currentState().shieldCharges)
+    }
+
+    @Test
     fun `collecting a speed-up power-up increases speed`() {
         val engine = GameEngine(quietConfig(), random = Random(1))
         val head = engine.currentState().head

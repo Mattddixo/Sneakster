@@ -24,6 +24,7 @@ import com.mattdixon.snake.ui.theme.ArenaBackground
 import com.mattdixon.snake.ui.theme.ArenaGrid
 import com.mattdixon.snake.ui.theme.ObstacleBackSafe
 import com.mattdixon.snake.ui.theme.ObstacleColor
+import com.mattdixon.snake.ui.theme.PowerUpShield
 import com.mattdixon.snake.ui.theme.SnakeHead
 import com.mattdixon.snake.ui.theme.SnakeTailFar
 import kotlin.math.PI
@@ -88,16 +89,35 @@ private fun DrawScope.drawVehicle(state: GameState, headRadius: Float) {
     val center = state.head.toOffset()
     drawGlow(center = center, color = SnakeHead, radius = headRadius * 3.2f)
 
+    if (state.shieldCharges > 0) drawShieldRing(center, headRadius, state.elapsedSeconds)
+
+    // The brief invincibility window after a shield-absorbed hit flickers the vehicle, the same
+    // "just got hit but you're safe for a moment" cue classic arcade games use.
+    val flickerAlpha = if (state.isInvincible && sin(state.elapsedSeconds * 30f) < 0f) 0.35f else 1f
+
     // The body shape is authored pointing "up" (matching the engine's default heading), so it
     // needs +90 degrees on top of the heading itself to land in the same compass convention
     // drawArc uses elsewhere (0 degrees = east, increasing clockwise).
     val rotationDegrees = state.headingRadians.toDegrees() + 90f
     rotate(degrees = rotationDegrees, pivot = center) {
         translate(left = center.x, top = center.y) {
-            drawPath(path = vehicleBodyPath(headRadius), color = SnakeHead)
-            drawPath(path = vehicleWindshieldPath(headRadius), color = SnakeTailFar)
+            drawPath(path = vehicleBodyPath(headRadius), color = SnakeHead.copy(alpha = flickerAlpha))
+            drawPath(path = vehicleWindshieldPath(headRadius), color = SnakeTailFar.copy(alpha = flickerAlpha))
         }
     }
+}
+
+/** A pulsing ring around the vehicle for as long as it's holding at least one shield charge -
+ * a persistent "you have a safety net" cue, distinct from the brief post-hit invincibility
+ * flicker above. */
+private fun DrawScope.drawShieldRing(center: Offset, headRadius: Float, elapsedSeconds: Float) {
+    val pulse = 0.9f + 0.1f * sin(elapsedSeconds * 5f)
+    drawCircle(
+        color = PowerUpShield.copy(alpha = 0.6f),
+        radius = headRadius * 2.1f * pulse,
+        center = center,
+        style = Stroke(width = 2f),
+    )
 }
 
 /** A simple top-down wedge: pointed nose, flat rear — enough to read as "a vehicle facing this

@@ -117,6 +117,7 @@ fun GameScreen(onExitToMenu: () -> Unit) {
                         score = gameState.score,
                         speed = gameState.speed,
                         activeEffects = gameState.activeEffects,
+                        shieldCharges = gameState.shieldCharges,
                         elapsedSeconds = gameState.elapsedSeconds,
                     )
                     PowerUpLegend(modifier = Modifier.padding(top = 8.dp))
@@ -243,6 +244,14 @@ private fun handleEvent(
         }
         is GameEvent.ObstacleDestroyed -> {
             if (settings.soundEnabled) soundPlayer.playObstacleDestroyed()
+            if (settings.hapticsEnabled) haptics.performHapticFeedback(HapticFeedbackType.LongPress)
+        }
+        is GameEvent.ShieldConsumed -> {
+            if (settings.soundEnabled) soundPlayer.playShieldConsumed()
+            if (settings.hapticsEnabled) haptics.performHapticFeedback(HapticFeedbackType.LongPress)
+        }
+        is GameEvent.ShieldEarned -> {
+            if (settings.soundEnabled) soundPlayer.playShieldEarned()
             if (settings.hapticsEnabled) haptics.performHapticFeedback(HapticFeedbackType.LongPress)
         }
         is GameEvent.RoundEnded -> {

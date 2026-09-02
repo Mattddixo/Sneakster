@@ -25,6 +25,18 @@ class GameEngine(
     // destroys it instead.
     private val obstacleBackArcHalfAngleRadians = OBSTACLE_BACK_ARC_HALF_ANGLE_DEGREES / 180f * PI.toFloat()
 
+    // Shield: a bad hit with a charge available bounces the vehicle off instead of ending the
+    // run. Capped so it's a real safety net, not a way to ignore obstacles entirely; earned
+    // both from the SHIELD pickup and, passively, by chaining obstacle destroys - the latter
+    // ties the run's own safety margin back into the core ram-from-behind mechanic instead of
+    // making it a separate bolt-on system.
+    private val maxShieldCharges = 2
+    private val obstacleDestroysPerBonusShield = 3
+    private val invincibilitySecondsAfterShieldHit = 1f
+    private var shieldCharges = 0
+    private var obstacleDestroysSinceLastShield = 0
+    private var invincibleUntil = 0f
+
     private var head = Vec2(config.arenaWidth / 2f, config.arenaHeight / 2f)
     private var heading = -PI.toFloat() / 2f
     private var speed = config.difficulty.baseSpeed * config.scale
@@ -73,6 +85,11 @@ class GameEngine(
     /** Test-only hook: places a power-up at an exact spot instead of a random one. */
     internal fun debugPlacePowerUp(position: Vec2, type: PowerUpType) {
         powerUps.add(PowerUp(id = nextId++, position = position, type = type, radius = config.powerUpRadius, spawnedAt = elapsedSeconds))
+    }
+
+    /** Test-only hook: grants a shield charge directly instead of via a SHIELD pickup. */
+    internal fun debugGrantShieldCharge() {
+        shieldCharges = (shieldCharges + 1).coerceAtMost(maxShieldCharges)
     }
 
     fun update(dtSeconds: Float): GameState {
@@ -151,14 +168,45 @@ class GameEngine(
     }
 
     private fun checkObstacleCollisions(events: MutableList<GameEvent>) {
+        if (elapsedSeconds < invincibleUntil) return
         val hit = obstacles.firstOrNull { head.distanceTo(it.position) < config.headRadius + it.radius } ?: return
         if (isRearHit(hit)) {
-            obstacles.remove(hit)
-            scoreAccumulator += obstacleDestroyScoreBonus
-            events.add(GameEvent.ObstacleDestroyed(hit.id))
+            destroyObstacle(hit, events)
+        } else if (shieldCharges > 0) {
+            shieldCharges--
+            bounceOffObstacle(hit)
+            invincibleUntil = elapsedSeconds + invincibilitySecondsAfterShieldHit
+            events.add(GameEvent.ShieldConsumed)
         } else {
             endRound(GameOverReason.OBSTACLE_COLLISION, events)
         }
+    }
+
+    private fun destroyObstacle(obstacle: Obstacle, events: MutableList<GameEvent>) {
+        obstacles.remove(obstacle)
+        scoreAccumulator += obstacleDestroyScoreBonus
+        events.add(GameEvent.ObstacleDestroyed(obstacle.id))
+
+        obstacleDestroysSinceLastShield++
+        if (obstacleDestroysSinceLastShield >= obstacleDestroysPerBonusShield && shieldCharges < maxShieldCharges) {
+            obstacleDestroysSinceLastShield = 0
+            shieldCharges++
+            events.add(GameEvent.ShieldEarned)
+        }
+    }
+
+    /** Knocks the head back to a safe distance from [obstacle] and turns it to face directly
+     * away, the same "recoil" feel as a wall bounce - clamped to the arena so a shield hit near
+     * an edge can't push the vehicle out of bounds. */
+    private fun bounceOffObstacle(obstacle: Obstacle) {
+        val away = (head - obstacle.position).normalized()
+        val safeDistance = config.headRadius + obstacle.radius + config.headRadius
+        val bounced = obstacle.position + away * safeDistance
+        head = Vec2(
+            bounced.x.coerceIn(config.headRadius, config.arenaWidth - config.headRadius),
+            bounced.y.coerceIn(config.headRadius, config.arenaHeight - config.headRadius),
+        )
+        heading = normalizeAngle(away.angleRadians())
     }
 
     /** True if the head struck [obstacle] from within its exposed rear cone - i.e. the head, at
@@ -193,6 +241,9 @@ class GameEngine(
             }
             if (powerUp.type == PowerUpType.SPAWN_OBSTACLE || powerUp.type == PowerUpType.SHARED_PRANK) {
                 repeat(if (random.nextBoolean()) 2 else 1) { spawnObstacle() }
+            }
+            if (powerUp.type == PowerUpType.SHIELD) {
+                shieldCharges = (shieldCharges + 1).coerceAtMost(maxShieldCharges)
             }
             events.add(GameEvent.PowerUpCollected(powerUp.type))
         }
@@ -277,6 +328,8 @@ class GameEngine(
         obstacles = obstacles.toList(),
         powerUps = powerUps.toList(),
         activeEffects = activeEffects.toMap(),
+        shieldCharges = shieldCharges,
+        isInvincible = elapsedSeconds < invincibleUntil,
         score = scoreAccumulator.toInt(),
         elapsedSeconds = elapsedSeconds,
         status = status,

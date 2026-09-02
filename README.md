@@ -28,9 +28,14 @@ feeling the same twice. Scores go to a small self-hosted leaderboard.
   there until you destroy one or the run ends.
 - Glowing circles are optional pickups: speed up, slow down, dropping fresh
   obstacles onto the field in exchange for bonus points (more hazards to
-  dodge, but also more exposed backs to farm), or a rare one that rotates
-  the whole arena 45° — clipped rather than shrunk to fit, so it reads as
-  an octagon partway through the turn.
+  dodge, but also more exposed backs to farm), a shield charge, or a rare
+  one that rotates the whole arena 45° — clipped rather than shrunk to fit,
+  so it reads as an octagon partway through the turn.
+- A shield charge turns a bad hit into a bounce-off instead of ending the
+  run (with a brief moment of invincibility so you don't immediately eat
+  another one) — up to two at a time. Find them as pickups, or earn one for
+  free every few obstacles you destroy in a row, so playing the core loop
+  well is what keeps you safe, not luck.
 - Everything in a match is configurable ahead of time from Settings:
   difficulty, turn sensitivity, sound, haptics, and the leaderboard
   server's address.

@@ -1,6 +1,7 @@
 package com.mattdixon.snake.engine
 
-/** The only way a run ends now: driving into an obstacle anywhere but its exposed back. */
+/** The only way a run ends now: driving into an obstacle anywhere but its exposed back, with no
+ * shield charge left to absorb it. */
 enum class GameOverReason { OBSTACLE_COLLISION }
 
 sealed interface GameStatus {
@@ -13,13 +14,21 @@ sealed interface GameEvent {
     data object WallBounced : GameEvent
     data class PowerUpCollected(val type: PowerUpType) : GameEvent
     data class ObstacleDestroyed(val obstacleId: Long) : GameEvent
+    /** A shield charge just absorbed a bad hit - the vehicle bounced off instead of dying. */
+    data object ShieldConsumed : GameEvent
+    /** A bonus shield charge was just earned by chaining obstacle destroys (not from a pickup -
+     * that already produces its own [PowerUpCollected]). */
+    data object ShieldEarned : GameEvent
     data class RoundEnded(val reason: GameOverReason) : GameEvent
 }
 
 /**
  * Immutable snapshot of a running match. [trail] is a short, fixed-length motion trail behind
  * the vehicle — purely cosmetic, with no bearing on collision (there's nothing left to run into
- * back there; only [obstacles] are hazards now).
+ * back there; only [obstacles] are hazards now). [shieldCharges] is how many bad hits the
+ * vehicle can currently absorb before one actually ends the run; [isInvincible] is true for a
+ * brief window right after a shield-absorbed hit, during which obstacle collisions are ignored
+ * entirely so the vehicle can't immediately re-trigger one while bouncing away.
  */
 data class GameState(
     val head: Vec2,
@@ -29,6 +38,8 @@ data class GameState(
     val obstacles: List<Obstacle>,
     val powerUps: List<PowerUp>,
     val activeEffects: Map<PowerUpType, Float>,
+    val shieldCharges: Int,
+    val isInvincible: Boolean,
     val score: Int,
     val elapsedSeconds: Float,
     val status: GameStatus,

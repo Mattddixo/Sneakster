@@ -17,6 +17,7 @@ val PowerUpSpawnObstacle = Color(0xFFFF6FB0)
 val PowerUpDiamondRotate = Color(0xFF5CE1E6)
 val PowerUpSharedGift = Color(0xFF7CFFC4)
 val PowerUpSharedPrank = Color(0xFFFF8A3D)
+val PowerUpShield = Color(0xFF4CD6FF)
 val TokenColor = Color(0xFFFFD700)
 
 val AccentPrimary = Color(0xFF39FF88)

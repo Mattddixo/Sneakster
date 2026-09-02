@@ -15,6 +15,12 @@ data class Vec2(val x: Float, val y: Float) {
     /** This vector's direction, in radians, using the same convention as [heading]. */
     fun angleRadians(): Float = atan2(y, x)
 
+    /** This vector scaled to length 1, or [ZERO] itself if it has no length to normalize. */
+    fun normalized(): Vec2 {
+        val len = length()
+        return if (len > 0f) this * (1f / len) else this
+    }
+
     companion object {
         val ZERO = Vec2(0f, 0f)
 

@@ -18,7 +18,7 @@ class SoundPlayer {
 
     fun playPowerUpCollected(type: PowerUpType) {
         val tone = when (type) {
-            PowerUpType.SPEED_UP, PowerUpType.SHARED_GIFT -> ToneGenerator.TONE_PROP_ACK
+            PowerUpType.SPEED_UP, PowerUpType.SHARED_GIFT, PowerUpType.SHIELD -> ToneGenerator.TONE_PROP_ACK
             PowerUpType.SLOW_DOWN -> ToneGenerator.TONE_PROP_NACK
             PowerUpType.SPAWN_OBSTACLE, PowerUpType.SHARED_PRANK -> ToneGenerator.TONE_PROP_PROMPT
             PowerUpType.DIAMOND_ROTATE -> ToneGenerator.TONE_PROP_BEEP2
@@ -29,6 +29,16 @@ class SoundPlayer {
 
     fun playObstacleDestroyed() {
         toneGenerator?.startTone(ToneGenerator.TONE_SUP_CONGESTION, 150)
+    }
+
+    /** A shield charge just absorbed a hit that would otherwise have ended the run. */
+    fun playShieldConsumed() {
+        toneGenerator?.startTone(ToneGenerator.TONE_SUP_ERROR, 120)
+    }
+
+    /** A bonus shield charge was just earned by chaining obstacle destroys. */
+    fun playShieldEarned() {
+        toneGenerator?.startTone(ToneGenerator.TONE_CDMA_CONFIRM, 120)
     }
 
     fun playGameOver() {

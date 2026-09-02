@@ -5,6 +5,7 @@ import com.mattdixon.snake.engine.PowerUpType
 import com.mattdixon.snake.ui.theme.PowerUpDiamondRotate
 import com.mattdixon.snake.ui.theme.PowerUpSharedGift
 import com.mattdixon.snake.ui.theme.PowerUpSharedPrank
+import com.mattdixon.snake.ui.theme.PowerUpShield
 import com.mattdixon.snake.ui.theme.PowerUpSlowDown
 import com.mattdixon.snake.ui.theme.PowerUpSpawnObstacle
 import com.mattdixon.snake.ui.theme.PowerUpSpeedUp
@@ -17,6 +18,7 @@ fun powerUpColor(type: PowerUpType): Color = when (type) {
     PowerUpType.SLOW_DOWN -> PowerUpSlowDown
     PowerUpType.SPAWN_OBSTACLE -> PowerUpSpawnObstacle
     PowerUpType.DIAMOND_ROTATE -> PowerUpDiamondRotate
+    PowerUpType.SHIELD -> PowerUpShield
     PowerUpType.TOKEN -> TokenColor
     PowerUpType.SHARED_GIFT -> PowerUpSharedGift
     PowerUpType.SHARED_PRANK -> PowerUpSharedPrank
@@ -27,6 +29,7 @@ fun powerUpLabel(type: PowerUpType): String = when (type) {
     PowerUpType.SLOW_DOWN -> "SLOW"
     PowerUpType.SPAWN_OBSTACLE -> "TRAP"
     PowerUpType.DIAMOND_ROTATE -> "SPIN"
+    PowerUpType.SHIELD -> "SHIELD"
     PowerUpType.TOKEN -> "TOKEN"
     PowerUpType.SHARED_GIFT -> "GIFT"
     PowerUpType.SHARED_PRANK -> "PRANK"

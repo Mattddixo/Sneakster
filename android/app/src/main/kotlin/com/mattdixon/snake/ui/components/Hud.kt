@@ -21,12 +21,21 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.mattdixon.snake.engine.PowerUpType
+import com.mattdixon.snake.ui.theme.PowerUpShield
 import kotlin.math.roundToInt
 
-/** Timer up top and prominent; score (with active-effect badges and current speed) sits
- * below it with a visible gap, rather than everything crammed onto one line at the very edge. */
+/** Timer up top and prominent; score (with active-effect badges, shield charges, and current
+ * speed) sits below it with a visible gap, rather than everything crammed onto one line at the
+ * very edge. */
 @Composable
-fun GameHud(score: Int, speed: Float, activeEffects: Map<PowerUpType, Float>, elapsedSeconds: Float, modifier: Modifier = Modifier) {
+fun GameHud(
+    score: Int,
+    speed: Float,
+    activeEffects: Map<PowerUpType, Float>,
+    shieldCharges: Int,
+    elapsedSeconds: Float,
+    modifier: Modifier = Modifier,
+) {
     Column(modifier = modifier, horizontalAlignment = Alignment.CenterHorizontally) {
         Text(
             text = "TIME",
@@ -52,6 +61,7 @@ fun GameHud(score: Int, speed: Float, activeEffects: Map<PowerUpType, Float>, el
                 fontWeight = FontWeight.Bold,
                 fontSize = 18.sp,
             )
+            if (shieldCharges > 0) ShieldBadge(shieldCharges)
             activeEffects.keys.forEach { EffectBadge(it) }
             Text(
                 text = "%.0f u/s".format(speed),
@@ -63,10 +73,24 @@ fun GameHud(score: Int, speed: Float, activeEffects: Map<PowerUpType, Float>, el
 }
 
 @Composable
+private fun RowScope.ShieldBadge(charges: Int) {
+    Text(
+        text = "SHIELD ×$charges",
+        color = Color.Black,
+        fontSize = 11.sp,
+        fontWeight = FontWeight.Bold,
+        modifier = Modifier
+            .background(PowerUpShield, RoundedCornerShape(6.dp))
+            .padding(horizontal = 8.dp, vertical = 3.dp),
+    )
+}
+
+@Composable
 private fun RowScope.EffectBadge(type: PowerUpType) {
-    // SPAWN_OBSTACLE and TOKEN never sit in activeEffects (zero effect duration), so they never
-    // reach this badge - only the timed effects do.
-    if (type == PowerUpType.SPAWN_OBSTACLE || type == PowerUpType.TOKEN) return
+    // SPAWN_OBSTACLE, TOKEN and SHIELD never sit in activeEffects (zero effect duration), so
+    // they never reach this badge - only the timed effects do. SHIELD gets its own badge above,
+    // since it's a persistent charge count rather than an expiring timer.
+    if (type == PowerUpType.SPAWN_OBSTACLE || type == PowerUpType.TOKEN || type == PowerUpType.SHIELD) return
     Text(
         text = powerUpLabel(type),
         color = Color.Black,
