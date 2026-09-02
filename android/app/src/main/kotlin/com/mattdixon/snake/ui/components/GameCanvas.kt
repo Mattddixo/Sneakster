@@ -30,6 +30,7 @@ import com.mattdixon.snake.ui.theme.SnakeHead
 import com.mattdixon.snake.ui.theme.SnakeTailFar
 import kotlin.math.PI
 import kotlin.math.sin
+import kotlin.math.sqrt
 
 private fun Vec2.toOffset() = Offset(x, y)
 
@@ -49,13 +50,14 @@ private const val OBSTACLE_SPAWN_ANIMATION_SECONDS = 0.25f
 @Composable
 fun GameCanvas(state: GameState, arenaWidth: Float, arenaHeight: Float, headRadius: Float = 7f, modifier: Modifier = Modifier) {
     val isFoggy = state.activeEffects.containsKey(PowerUpType.SHARED_FOG)
+    val isDiamondActive = state.activeEffects.containsKey(PowerUpType.DIAMOND_ROTATE)
     Canvas(modifier = modifier.background(ArenaBackground)) {
         scale(scaleX = density, scaleY = density, pivot = Offset.Zero) {
             if (isFoggy) drawFogOverlay(arenaWidth, arenaHeight) else drawGrid(arenaWidth, arenaHeight)
             state.obstacles.forEach { drawObstacle(it, state.elapsedSeconds) }
             state.powerUps.forEach { drawPowerUp(it, state.elapsedSeconds) }
             drawVehicle(state, headRadius)
-            drawArenaBorder(arenaWidth, arenaHeight)
+            drawArenaBorder(arenaWidth, arenaHeight, isDiamondActive)
         }
     }
 }
@@ -81,15 +83,38 @@ private fun DrawScope.drawFogOverlay(arenaWidth: Float, arenaHeight: Float) {
 }
 
 /** A crisp, clearly visible edge so the playable bounds read at a glance, distinct from the
- * faint background grid — inset by half the stroke width so the whole line stays on-canvas. */
-private fun DrawScope.drawArenaBorder(arenaWidth: Float, arenaHeight: Float, strokeWidth: Float = 3f) {
+ * faint background grid. While DIAMOND_ROTATE is active the actual playable boundary has its
+ * four corners cut (see [bounceOffDiamondCorners] in the engine), so the border traces that
+ * same octagon instead of the plain square - otherwise the cut corners would have no visible
+ * wall at all, just empty space where the clipped rotation happens to hide them. */
+private fun DrawScope.drawArenaBorder(arenaWidth: Float, arenaHeight: Float, isDiamondActive: Boolean, strokeWidth: Float = 3f) {
     val inset = strokeWidth / 2f
-    drawRect(
-        color = AccentPrimary.copy(alpha = 0.55f),
-        topLeft = Offset(inset, inset),
-        size = Size(arenaWidth - strokeWidth, arenaHeight - strokeWidth),
-        style = Stroke(width = strokeWidth),
-    )
+    val color = AccentPrimary.copy(alpha = 0.55f)
+    if (!isDiamondActive) {
+        drawRect(
+            color = color,
+            topLeft = Offset(inset, inset),
+            size = Size(arenaWidth - strokeWidth, arenaHeight - strokeWidth),
+            style = Stroke(width = strokeWidth),
+        )
+        return
+    }
+
+    // Exact intersection of the arena square with itself rotated 45 degrees: L is how far the
+    // cut runs in from each true corner, measured along that corner's two edges.
+    val cut = arenaWidth - arenaWidth / sqrt(2f)
+    val path = Path().apply {
+        moveTo(cut, inset)
+        lineTo(arenaWidth - cut, inset)
+        lineTo(arenaWidth - inset, cut)
+        lineTo(arenaWidth - inset, arenaHeight - cut)
+        lineTo(arenaWidth - cut, arenaHeight - inset)
+        lineTo(cut, arenaHeight - inset)
+        lineTo(inset, arenaHeight - cut)
+        lineTo(inset, cut)
+        close()
+    }
+    drawPath(path = path, color = color, style = Stroke(width = strokeWidth))
 }
 
 private fun DrawScope.drawVehicle(state: GameState, headRadius: Float) {

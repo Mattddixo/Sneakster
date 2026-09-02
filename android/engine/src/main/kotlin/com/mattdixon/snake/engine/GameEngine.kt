@@ -1,6 +1,7 @@
 package com.mattdixon.snake.engine
 
 import kotlin.math.PI
+import kotlin.math.sqrt
 import kotlin.random.Random
 
 /**
@@ -15,6 +16,18 @@ class GameEngine(
 ) {
     private val headSpawnClearance = config.headRadius * 4f
     private val survivalPointsPerSecondPerSpeedUnit = 0.15f
+
+    // DIAMOND_ROTATE only rotates the *rendering*, not the arena's own coordinates - the UI
+    // clips the rotated square to a same-size window, which cuts off its four corners (that's
+    // what makes it read as an octagon rather than a shrinking diamond). Without this, the head
+    // could still legally sit in one of those true corners - a position the clip renders as
+    // empty black space, since nothing drawn there survives the clip - so it'd look like driving
+    // into a void with no wall. While the effect is active, these two diagonal boundaries cut
+    // the same four corners from the *collision* shape, so the head can never reach a spot the
+    // clip would hide: this diamondDiagLimit is the exact distance (center to a cut edge) where
+    // a square intersects its own 45-degree rotation, inset by headRadius so it's the head's
+    // *center* limit, matching how the plain arena bounds above are also center limits.
+    private val diamondDiagLimit = config.arenaWidth / sqrt(2f) - config.headRadius * sqrt(2f)
 
     // Awarded once, the instant an obstacle is destroyed - well above a single frame's worth of
     // survival points, so it reads as a deliberate bonus rather than a blip.
@@ -92,6 +105,11 @@ class GameEngine(
         shieldCharges = (shieldCharges + 1).coerceAtMost(maxShieldCharges)
     }
 
+    /** Test-only hook: activates a timed effect directly instead of via a pickup. */
+    internal fun debugActivateEffect(type: PowerUpType, durationSeconds: Float) {
+        activeEffects[type] = elapsedSeconds + durationSeconds
+    }
+
     fun update(dtSeconds: Float): GameState {
         if (status != GameStatus.Playing) return snapshot(emptyList())
         val events = mutableListOf<GameEvent>()
@@ -150,9 +168,57 @@ class GameEngine(
             next = Vec2(next.x, next.y.coerceIn(r, config.arenaHeight - r))
             bounced = true
         }
+        if (isEffectActive(PowerUpType.DIAMOND_ROTATE)) {
+            val (cornered, adjusted) = bounceOffDiamondCorners(next)
+            next = adjusted
+            if (cornered) bounced = true
+        }
 
         head = next
         if (bounced) events.add(GameEvent.WallBounced)
+    }
+
+    /** Cuts the arena's four true corners against the two diagonals a same-size square rotated
+     * 45 degrees would intersect it at - see [diamondDiagLimit]. Applied as two independent
+     * axis-like checks (sum and difference of the centered coordinates), same shape as the
+     * plain x/y wall checks above, just rotated 45 degrees. */
+    private fun bounceOffDiamondCorners(position: Vec2): Pair<Boolean, Vec2> {
+        val cx = config.arenaWidth / 2f
+        val cy = config.arenaHeight / 2f
+        var (x, y) = position
+        var cornered = false
+
+        val sum = (x - cx) + (y - cy)
+        if (sum > diamondDiagLimit) {
+            val excess = sum - diamondDiagLimit
+            x -= excess / 2f
+            y -= excess / 2f
+            heading = normalizeAngle(-PI.toFloat() / 2f - heading)
+            cornered = true
+        } else if (sum < -diamondDiagLimit) {
+            val excess = -diamondDiagLimit - sum
+            x += excess / 2f
+            y += excess / 2f
+            heading = normalizeAngle(-PI.toFloat() / 2f - heading)
+            cornered = true
+        }
+
+        val diff = (x - cx) - (y - cy)
+        if (diff > diamondDiagLimit) {
+            val excess = diff - diamondDiagLimit
+            x -= excess / 2f
+            y += excess / 2f
+            heading = normalizeAngle(PI.toFloat() / 2f - heading)
+            cornered = true
+        } else if (diff < -diamondDiagLimit) {
+            val excess = -diamondDiagLimit - diff
+            x += excess / 2f
+            y -= excess / 2f
+            heading = normalizeAngle(PI.toFloat() / 2f - heading)
+            cornered = true
+        }
+
+        return cornered to Vec2(x, y)
     }
 
     private fun updateTrail() {

@@ -46,15 +46,16 @@ feeling the same twice. Scores go to a small self-hosted leaderboard.
 
 Small token pickups appear on the board too. Tokens are spent from the Shop
 screen to leave an effect in a pool shared across everyone playing against
-that backend — not for yourself. The Shop currently offers four: a Gift
-(bonus points plus a speed boost), a Prank (bonus points, but it drops extra
-obstacles nearby), a Shield Gift (instantly grants a shield charge), and a
-Fog Prank (bonus points, but dims the board for a few seconds). Each round,
-sometime in its first two minutes, the game pulls one pending effect from
-that pool (if there is one) and drops it into your match — as one of the
-five orb colors above, so you won't know which of the four it is until you
-collect it. It's a way for players to leave each other something without
-ever knowing who it came from. See `backend/README.md` for the pool's API
+that backend — not for yourself. The Shop is split into two sections, priced
+to be affordable off a single decent run rather than needing a grind: things
+that help whoever finds them (a Shield charge, a Speed Boost) and things that
+hinder them (an Ambush of extra obstacles, a Fog that dims their board) —
+each still worth bonus points either way. Each round, sometime in its first
+two minutes, the game pulls one pending effect from that pool (if there is
+one) and drops it into your match — as one of the five orb colors above, so
+you won't know which of the four it is until you collect it. It's a way for
+players to leave each other something without ever knowing who it came from.
+See `backend/README.md` for the pool's API
 and trust model.
 
 ## Repo layout and why it's split this way

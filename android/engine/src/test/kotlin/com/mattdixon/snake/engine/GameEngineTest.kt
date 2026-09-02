@@ -1,6 +1,7 @@
 package com.mattdixon.snake.engine
 
 import kotlin.math.PI
+import kotlin.math.sqrt
 import kotlin.random.Random
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -60,6 +61,40 @@ class GameEngineTest {
         repeat(150) { status = engine.update(FIXED_DT).status }
 
         assertEquals(GameStatus.Playing, status)
+    }
+
+    @Test
+    fun `while diamond-rotate is active the vehicle bounces off the cut corner instead of reaching it`() {
+        // The UI only rotates the *rendering* for DIAMOND_ROTATE, clipped to a same-size window -
+        // that cuts the arena's four true corners out of what's visible (it's what makes the
+        // effect read as an octagon, not a shrinking diamond). Without a matching cut in the
+        // collision shape, the head could sit in a true corner the clip renders as empty black
+        // space - this test drives it straight at one and confirms it bounces well short of it.
+        val config = GameConfig(arenaWidth = 2000f, arenaHeight = 2000f, difficulty = Difficulty.NORMAL)
+        val engine = GameEngine(config, random = Random(1))
+        engine.debugActivateEffect(PowerUpType.DIAMOND_ROTATE, durationSeconds = 30f)
+
+        // Default heading is straight up (-PI/2); turn right until it points diagonally at the
+        // bottom-right corner (+PI/4) - a 3*PI/4 turn, ~53 frames at NORMAL's turn rate.
+        engine.setTurnInput(TurnInput.RIGHT)
+        repeat(53) { engine.update(FIXED_DT) }
+        engine.setTurnInput(TurnInput.NONE)
+
+        val cx = config.arenaWidth / 2f
+        val cy = config.arenaHeight / 2f
+        val diagLimit = config.arenaWidth / sqrt(2f) - config.headRadius * sqrt(2f)
+
+        var maxSumSeen = Float.NEGATIVE_INFINITY
+        repeat(300) {
+            val state = engine.update(FIXED_DT)
+            val sum = (state.head.x - cx) + (state.head.y - cy)
+            if (sum > maxSumSeen) maxSumSeen = sum
+        }
+
+        assertTrue(
+            maxSumSeen <= diagLimit + 1f,
+            "expected the vehicle to bounce off the cut corner at sum=$diagLimit, but it reached sum=$maxSumSeen",
+        )
     }
 
     @Test
