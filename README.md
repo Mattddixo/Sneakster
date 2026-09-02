@@ -28,9 +28,11 @@ feeling the same twice. Scores go to a small self-hosted leaderboard.
   there until you destroy one or the run ends.
 - Glowing circles are optional pickups, kept to a small, easy-to-read set:
   slow down, a shield charge, tokens (the currency for the Shop, below),
-  and a rare one that rotates the whole arena 45° — clipped rather than
-  shrunk to fit, so it reads as an octagon partway through the turn. A
-  fifth color marks anything pulled from the shared effects pool (see
+  and a rare one that rotates the whole arena another 45° clockwise every
+  time you collect it — clipped rather than shrunk to fit, so it reads as
+  an octagon partway through the turn. It sticks at whatever rotation it's
+  on until the next one nudges it further; it doesn't wear off on its own.
+  A fifth color marks anything pulled from the shared effects pool (see
   below) — deliberately one color for all of them, since which specific
   effect you got is meant to be a surprise.
 - A shield charge turns a bad hit into a bounce-off instead of ending the

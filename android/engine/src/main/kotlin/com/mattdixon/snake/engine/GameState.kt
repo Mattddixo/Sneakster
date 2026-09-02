@@ -29,6 +29,10 @@ sealed interface GameEvent {
  * vehicle can currently absorb before one actually ends the run; [isInvincible] is true for a
  * brief window right after a shield-absorbed hit, during which obstacle collisions are ignored
  * entirely so the vehicle can't immediately re-trigger one while bouncing away.
+ * [diamondRotationStage] counts how many DIAMOND_ROTATE pickups have been collected this round -
+ * it never resets on its own, so the UI can animate a continuing clockwise spin (45 degrees per
+ * stage) rather than a fixed on/off rotation; [isDiamondCornersActive] is the derived collision
+ * state (odd stage = corners cut), matching what the UI's clip shows as an octagon.
  */
 data class GameState(
     val head: Vec2,
@@ -40,8 +44,11 @@ data class GameState(
     val activeEffects: Map<PowerUpType, Float>,
     val shieldCharges: Int,
     val isInvincible: Boolean,
+    val diamondRotationStage: Int,
     val score: Int,
     val elapsedSeconds: Float,
     val status: GameStatus,
     val events: List<GameEvent> = emptyList(),
-)
+) {
+    val isDiamondCornersActive: Boolean get() = diamondRotationStage % 2 != 0
+}

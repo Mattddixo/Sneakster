@@ -14,10 +14,13 @@ enum class PowerUpType(
     /** Eases speed off for a few seconds so a tight spot can be threaded safely. */
     SLOW_DOWN(scoreBonus = 10, effectDurationSeconds = 5f),
 
-    /** Purely visual: the UI spins the arena from square to diamond and back. Doesn't touch
-     * physics or collision at all — the engine just tracks that it's active, like any other
-     * timed effect, so the UI layer can read it from [GameState.activeEffects]. */
-    DIAMOND_ROTATE(scoreBonus = 20, effectDurationSeconds = 6f),
+    /** Rotates the arena's rendering another 45 degrees clockwise every time one is collected -
+     * not a timed effect: it sticks at whatever rotation it's on until the next one nudges it
+     * further, tracked via [GameState.diamondRotationStage] rather than the generic
+     * [GameState.activeEffects] timer map. Odd stages read as a corner-cut octagon, even stages
+     * as a plain square (see [GameEngine]'s corner-cutting collision logic), so every other
+     * pickup visually "turns off" the effect even though the rotation keeps accumulating. */
+    DIAMOND_ROTATE(scoreBonus = 20, effectDurationSeconds = 0f),
 
     /** Grants one shield charge (see [GameEngine]'s shield handling): the next obstacle hit that
      * isn't a clean rear shot bounces the vehicle off instead of ending the run, consuming the

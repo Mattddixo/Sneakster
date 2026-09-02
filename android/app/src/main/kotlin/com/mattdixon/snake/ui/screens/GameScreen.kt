@@ -118,6 +118,7 @@ fun GameScreen(onExitToMenu: () -> Unit) {
                         speed = gameState.speed,
                         activeEffects = gameState.activeEffects,
                         shieldCharges = gameState.shieldCharges,
+                        diamondRotationActive = gameState.isDiamondCornersActive,
                         elapsedSeconds = gameState.elapsedSeconds,
                     )
                     PowerUpLegend(modifier = Modifier.padding(top = 8.dp))
@@ -125,8 +126,13 @@ fun GameScreen(onExitToMenu: () -> Unit) {
 
                 Spacer(Modifier.weight(1f))
 
-                val diamondActive = gameState?.activeEffects?.containsKey(PowerUpType.DIAMOND_ROTATE) == true
-                val rotation by animateFloatAsState(if (diamondActive) -45f else 0f, tween(600), label = "diamondRotation")
+                // -45 degrees per DIAMOND_ROTATE pickup, never reset - it sticks at whatever
+                // rotation it's on until the next pickup nudges it another turn clockwise, rather
+                // than snapping back to 0 on a timer. animateFloatAsState interpolates from
+                // whatever the previous stage's angle was, so this reads as one continuing spin
+                // rather than a fresh spin each time.
+                val diamondStage = gameState?.diamondRotationStage ?: 0
+                val rotation by animateFloatAsState(-45f * diamondStage, tween(600), label = "diamondRotation")
 
                 // Square arena: a game field this shape reads far better than a screen-filling
                 // rectangle, and it's what makes the vehicle's actual size legible against the

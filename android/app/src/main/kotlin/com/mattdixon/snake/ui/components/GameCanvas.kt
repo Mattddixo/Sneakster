@@ -50,7 +50,7 @@ private const val OBSTACLE_SPAWN_ANIMATION_SECONDS = 0.25f
 @Composable
 fun GameCanvas(state: GameState, arenaWidth: Float, arenaHeight: Float, headRadius: Float = 7f, modifier: Modifier = Modifier) {
     val isFoggy = state.activeEffects.containsKey(PowerUpType.SHARED_FOG)
-    val isDiamondActive = state.activeEffects.containsKey(PowerUpType.DIAMOND_ROTATE)
+    val isDiamondActive = state.isDiamondCornersActive
     Canvas(modifier = modifier.background(ArenaBackground)) {
         scale(scaleX = density, scaleY = density, pivot = Offset.Zero) {
             if (isFoggy) drawFogOverlay(arenaWidth, arenaHeight) else drawGrid(arenaWidth, arenaHeight)

@@ -21,6 +21,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.mattdixon.snake.engine.PowerUpType
+import com.mattdixon.snake.ui.theme.PowerUpDiamondRotate
 import com.mattdixon.snake.ui.theme.PowerUpShield
 import kotlin.math.roundToInt
 
@@ -33,6 +34,7 @@ fun GameHud(
     speed: Float,
     activeEffects: Map<PowerUpType, Float>,
     shieldCharges: Int,
+    diamondRotationActive: Boolean,
     elapsedSeconds: Float,
     modifier: Modifier = Modifier,
 ) {
@@ -62,6 +64,7 @@ fun GameHud(
                 fontSize = 18.sp,
             )
             if (shieldCharges > 0) ShieldBadge(shieldCharges)
+            if (diamondRotationActive) DiamondBadge()
             activeEffects.keys.forEach { EffectBadge(it) }
             Text(
                 text = "%.0f u/s".format(speed),
@@ -85,12 +88,29 @@ private fun RowScope.ShieldBadge(charges: Int) {
     )
 }
 
+/** DIAMOND_ROTATE sticks until the next pickup rather than counting down, same reasoning as
+ * [ShieldBadge] above - a shrinking-timer badge would be actively misleading for an effect that
+ * doesn't expire on its own. */
+@Composable
+private fun RowScope.DiamondBadge() {
+    Text(
+        text = powerUpLabel(PowerUpType.DIAMOND_ROTATE),
+        color = Color.Black,
+        fontSize = 11.sp,
+        fontWeight = FontWeight.Bold,
+        modifier = Modifier
+            .background(PowerUpDiamondRotate, RoundedCornerShape(6.dp))
+            .padding(horizontal = 8.dp, vertical = 3.dp),
+    )
+}
+
 @Composable
 private fun RowScope.EffectBadge(type: PowerUpType) {
-    // TOKEN and SHIELD never sit in activeEffects (zero effect duration), so they never reach
-    // this badge - only the timed effects do. SHIELD gets its own badge above, since it's a
-    // persistent charge count rather than an expiring timer. SHARED_SHIELD is likewise instant
-    // (it just grants a charge, same as SHIELD) so it never lands here either.
+    // TOKEN, SHIELD and DIAMOND_ROTATE never sit in activeEffects (zero effect duration), so
+    // they never reach this badge - only the timed effects do. SHIELD and DIAMOND_ROTATE get
+    // their own dedicated badges above, since both are persistent state rather than an expiring
+    // timer. SHARED_SHIELD is likewise instant (it just grants a charge, same as SHIELD) so it
+    // never lands here either.
     if (type == PowerUpType.TOKEN || type == PowerUpType.SHIELD || type == PowerUpType.SHARED_SHIELD) return
     Text(
         text = powerUpLabel(type),

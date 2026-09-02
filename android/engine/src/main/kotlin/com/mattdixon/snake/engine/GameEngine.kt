@@ -50,6 +50,12 @@ class GameEngine(
     private var obstacleDestroysSinceLastShield = 0
     private var invincibleUntil = 0f
 
+    // Counts DIAMOND_ROTATE pickups rather than tracking a timed on/off state - it never resets
+    // on its own, only increments, so each pickup reads as "another 45-degree turn" instead of
+    // "restart a 6-second timer". Odd stages cut the arena's corners (see moveHead below); even
+    // stages (including 0) are a plain square.
+    private var diamondRotationStage = 0
+
     private var head = Vec2(config.arenaWidth / 2f, config.arenaHeight / 2f)
     private var heading = -PI.toFloat() / 2f
     private var speed = config.difficulty.baseSpeed * config.scale
@@ -110,6 +116,11 @@ class GameEngine(
         activeEffects[type] = elapsedSeconds + durationSeconds
     }
 
+    /** Test-only hook: sets the diamond-rotate stage directly instead of via repeated pickups. */
+    internal fun debugSetDiamondRotationStage(stage: Int) {
+        diamondRotationStage = stage
+    }
+
     fun update(dtSeconds: Float): GameState {
         if (status != GameStatus.Playing) return snapshot(emptyList())
         val events = mutableListOf<GameEvent>()
@@ -168,7 +179,7 @@ class GameEngine(
             next = Vec2(next.x, next.y.coerceIn(r, config.arenaHeight - r))
             bounced = true
         }
-        if (isEffectActive(PowerUpType.DIAMOND_ROTATE)) {
+        if (diamondRotationStage % 2 != 0) {
             val (cornered, adjusted) = bounceOffDiamondCorners(next)
             next = adjusted
             if (cornered) bounced = true
@@ -310,6 +321,9 @@ class GameEngine(
             if (powerUp.type == PowerUpType.SHIELD || powerUp.type == PowerUpType.SHARED_SHIELD) {
                 shieldCharges = (shieldCharges + 1).coerceAtMost(maxShieldCharges)
             }
+            if (powerUp.type == PowerUpType.DIAMOND_ROTATE) {
+                diamondRotationStage++
+            }
             events.add(GameEvent.PowerUpCollected(powerUp.type))
         }
         powerUps.removeAll(collected)
@@ -395,6 +409,7 @@ class GameEngine(
         activeEffects = activeEffects.toMap(),
         shieldCharges = shieldCharges,
         isInvincible = elapsedSeconds < invincibleUntil,
+        diamondRotationStage = diamondRotationStage,
         score = scoreAccumulator.toInt(),
         elapsedSeconds = elapsedSeconds,
         status = status,

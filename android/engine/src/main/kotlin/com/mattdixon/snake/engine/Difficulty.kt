@@ -22,7 +22,8 @@ enum class Difficulty(
         // The regular power-up pool is 3 types (SLOW_DOWN, DIAMOND_ROTATE, SHIELD) since
         // SPEED_UP/SPAWN_OBSTACLE were removed - down from 5. Same spawn timer would have made
         // each survivor ~1.7x more frequent than before just from the smaller pool, which was
-        // especially noticeable for DIAMOND_ROTATE (a disruptive 6-second effect). These periods
+        // especially noticeable for DIAMOND_ROTATE (a visually disruptive effect that now sticks
+        // until the next one is collected, rather than wearing off on its own). These periods
         // are widened to keep any one type's real-world frequency roughly where it was.
         powerUpSpawnPeriodSeconds = 6f..10f,
     ),

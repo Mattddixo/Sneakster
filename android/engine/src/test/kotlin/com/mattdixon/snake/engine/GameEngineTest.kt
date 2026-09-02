@@ -72,7 +72,7 @@ class GameEngineTest {
         // space - this test drives it straight at one and confirms it bounces well short of it.
         val config = GameConfig(arenaWidth = 2000f, arenaHeight = 2000f, difficulty = Difficulty.NORMAL)
         val engine = GameEngine(config, random = Random(1))
-        engine.debugActivateEffect(PowerUpType.DIAMOND_ROTATE, durationSeconds = 30f)
+        engine.debugSetDiamondRotationStage(1)
 
         // Default heading is straight up (-PI/2); turn right until it points diagonally at the
         // bottom-right corner (+PI/4) - a 3*PI/4 turn, ~53 frames at NORMAL's turn rate.
@@ -163,6 +163,44 @@ class GameEngineTest {
         }
 
         assertEquals(1, stateAfter.shieldCharges, "expected the shield pickup to grant a charge")
+    }
+
+    @Test
+    fun `collecting a diamond-rotate power-up advances the rotation stage and never expires it`() {
+        val engine = GameEngine(quietConfig(), random = Random(1))
+        val head = engine.currentState().head
+        engine.debugPlacePowerUp(position = Vec2(head.x, head.y - 100f), type = PowerUpType.DIAMOND_ROTATE)
+
+        var stateAfter = engine.currentState()
+        for (frame in 0 until 300) {
+            stateAfter = engine.update(FIXED_DT)
+            if (stateAfter.events.any { it is GameEvent.PowerUpCollected }) break
+        }
+        assertEquals(1, stateAfter.diamondRotationStage, "expected the pickup to advance the stage by one")
+        assertTrue(stateAfter.isDiamondCornersActive, "an odd stage should have the corners cut")
+
+        // Unlike a timed effect, this should still be active a long time later with nothing
+        // else collected - there's no timer to expire it.
+        repeat(600) { stateAfter = engine.update(FIXED_DT) }
+        assertEquals(1, stateAfter.diamondRotationStage)
+        assertTrue(stateAfter.isDiamondCornersActive, "the effect should stick until another pickup, not expire on its own")
+    }
+
+    @Test
+    fun `a second diamond-rotate pickup advances the stage again rather than resetting it`() {
+        val engine = GameEngine(quietConfig(), random = Random(1))
+        engine.debugSetDiamondRotationStage(1)
+        val head = engine.currentState().head
+        engine.debugPlacePowerUp(position = Vec2(head.x, head.y - 100f), type = PowerUpType.DIAMOND_ROTATE)
+
+        var stateAfter = engine.currentState()
+        for (frame in 0 until 300) {
+            stateAfter = engine.update(FIXED_DT)
+            if (stateAfter.events.any { it is GameEvent.PowerUpCollected }) break
+        }
+
+        assertEquals(2, stateAfter.diamondRotationStage, "expected the second pickup to advance to stage 2, not reset to 1")
+        assertTrue(!stateAfter.isDiamondCornersActive, "an even stage should be back to a plain square")
     }
 
     @Test
